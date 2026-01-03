@@ -1,0 +1,101 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  slug     String    @unique
+  isActive Boolean   @default(true)
+  products Product[]
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String
+  slug        String    @unique
+  description String    @db.Text
+  image       String
+  badge       String?
+  isActive    Boolean   @default(true)
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id])
+  variants    Variant[]
+  createdAt   DateTime  @default(now())
+}
+
+model Variant {
+  id            Int     @id @default(autoincrement())
+  name          String
+  price         Float
+  originalPrice Float
+  isWarranty    Boolean @default(false)
+  isActive      Boolean @default(true)
+  productId     Int
+  product       Product @relation(fields: [productId], references: [id])
+}
+
+model PaymentMethod {
+  id          Int      @id @default(autoincrement())
+  name        String
+  icon        String?
+  iconType    String   @default("emoji") // emoji or image
+  accountInfo String?  @db.Text
+  feeType     String   @default("fixed") // fixed or percent
+  fees        Float    @default(0)
+  currency    String   @default("IDR")
+  qrisImage   String?  // Path to QRIS image
+  isActive    Boolean  @default(true)
+}
+
+model Discount {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  name        String
+  type        String    @default("fixed") // fixed or percent
+  value       Float
+  maxDiscount Float?
+  minPurchase Float?
+  applyTo     String    @default("all") // all or products
+  productIds  String?   @db.Text // JSON array of product IDs
+  usageLimit  Int?      // Max number of uses (null = unlimited)
+  usageCount  Int       @default(0) // Current usage count
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}
+
+model Order {
+  id            Int      @id @default(autoincrement())
+  productName   String
+  variantName   String
+  quantity      Int
+  price         Float
+  uniqueCode    Int
+  totalPrice    Float
+  paymentMethod String
+  status        String   @default("pending")
+  whatsappSent  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model StoreSettings {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String @db.Text
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+}
