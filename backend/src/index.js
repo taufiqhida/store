@@ -218,11 +218,17 @@ app.post('/api/orders', async (req, res) => {
     const discount = discountAmount || 0;
     const totalPrice = subtotal + fee - discount + uniqueCode;
 
-    // Create order
+    // Generate order code: TFQ-YYYYMMDD-XXXX
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomCode = Math.floor(1000 + Math.random() * 9000);
+    const orderCode = `TFQ-${dateStr}-${randomCode}`;
+
+    // Create order with orderCode
     await conn.query(
-      `INSERT INTO \`Order\` (productName, variantName, quantity, price, uniqueCode, totalPrice, paymentMethod, status, createdAt) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-      [productName, variantName, quantity, price, uniqueCode, totalPrice, paymentMethod]
+      `INSERT INTO \`Order\` (orderCode, productName, variantName, quantity, price, uniqueCode, totalPrice, paymentMethod, status, createdAt) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      [orderCode, productName, variantName, quantity, price, uniqueCode, totalPrice, paymentMethod]
     );
 
     // Get WhatsApp settings
@@ -236,6 +242,7 @@ app.post('/api/orders', async (req, res) => {
 
     // Build WhatsApp message with breakdown
     let waMessage = `Halo ${settingsObj.store_name || 'Taufiq Store'}! 👋\n\n`;
+    waMessage += `🔖 *Kode Pemesanan: ${orderCode}*\n\n`;
     waMessage += `Saya ingin memesan:\n`;
     waMessage += `📦 Produk: ${productName}\n`;
     waMessage += `🎯 Varian: ${variantName}\n`;
@@ -263,6 +270,7 @@ app.post('/api/orders', async (req, res) => {
       waMessage += `\n📝 Pesan: ${buyerMessage}\n`;
     }
 
+    waMessage += `\n💡 Simpan kode pemesanan untuk kirim testimoni nanti ya!`;
     waMessage += `\nMohon diproses ya, terima kasih! 🙏`;
 
     // Create WhatsApp URL
@@ -285,6 +293,7 @@ app.post('/api/orders', async (req, res) => {
 
     res.json({
       success: true,
+      orderCode,
       uniqueCode,
       totalPrice,
       whatsappUrl: waUrl
@@ -862,7 +871,337 @@ app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res)
   }
 });
 
+// ==================== FLASH SALE ROUTES ====================
+
+// Get active flash sales (public)
+app.get('/api/flash-sales', async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const flashSales = await conn.query(`
+      SELECT fs.*, p.name as productName, p.image as productImage, p.slug as productSlug,
+             v.name as variantName, v.price as variantPrice,
+             COALESCE(v.price, (SELECT MIN(v2.price) FROM Variant v2 WHERE v2.productId = fs.productId AND v2.isActive = 1)) as originalPrice
+      FROM FlashSale fs
+      LEFT JOIN Product p ON fs.productId = p.id
+      LEFT JOIN Variant v ON fs.variantId = v.id
+      WHERE fs.isActive = 1 AND fs.startDate <= ? AND fs.endDate >= ?
+      ORDER BY fs.endDate ASC
+    `, [now, now]);
+
+    // Calculate discounted price
+    flashSales.forEach(fs => {
+      if (fs.originalPrice) {
+        fs.discountedPrice = Math.round(fs.originalPrice * (1 - fs.discountPercent / 100));
+      }
+    });
+
+    res.json(flashSales);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Get all flash sales
+app.get('/api/admin/flash-sales', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const flashSales = await conn.query(`
+      SELECT fs.*, p.name as productName, v.name as variantName
+      FROM FlashSale fs
+      LEFT JOIN Product p ON fs.productId = p.id
+      LEFT JOIN Variant v ON fs.variantId = v.id
+      ORDER BY fs.createdAt DESC
+    `);
+    res.json(flashSales);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Create flash sale
+app.post('/api/admin/flash-sales', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { title, description, productId, variantId, discountPercent, startDate, endDate, isActive } = req.body;
+
+    const result = await conn.query(
+      `INSERT INTO FlashSale (title, description, productId, variantId, discountPercent, startDate, endDate, isActive, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [title, description || null, productId, variantId || null, discountPercent, startDate, endDate, isActive !== false ? 1 : 0]
+    );
+
+    res.json({ success: true, id: Number(result.insertId) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Update flash sale
+app.put('/api/admin/flash-sales/:id', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    const { title, description, productId, variantId, discountPercent, startDate, endDate, isActive } = req.body;
+
+    await conn.query(
+      `UPDATE FlashSale SET title = ?, description = ?, productId = ?, variantId = ?, discountPercent = ?, 
+       startDate = ?, endDate = ?, isActive = ? WHERE id = ?`,
+      [title, description || null, productId, variantId || null, discountPercent, startDate, endDate, isActive ? 1 : 0, id]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Delete flash sale
+app.delete('/api/admin/flash-sales/:id', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+
+    await conn.query('DELETE FROM FlashSale WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// ==================== TESTIMONIAL ROUTES ====================
+
+// Get approved testimonials (public)
+app.get('/api/testimonials', async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const testimonials = await conn.query(
+      'SELECT id, name, content, rating, productName, createdAt FROM Testimonial WHERE isApproved = 1 ORDER BY createdAt DESC LIMIT 20'
+    );
+    res.json(testimonials);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Submit testimonial (public) - requires valid order code
+app.post('/api/testimonials', async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { orderCode, name, content, rating } = req.body;
+
+    // Validate order code exists
+    const orders = await conn.query('SELECT productName FROM `Order` WHERE orderCode = ?', [orderCode]);
+    if (orders.length === 0) {
+      return res.status(400).json({ error: 'Kode pemesanan tidak valid' });
+    }
+
+    // Check if testimonial already exists for this order code
+    const existing = await conn.query('SELECT id FROM Testimonial WHERE orderCode = ?', [orderCode]);
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'Testimoni untuk pesanan ini sudah ada' });
+    }
+
+    const productName = orders[0].productName;
+
+    const result = await conn.query(
+      `INSERT INTO Testimonial (orderCode, name, content, rating, productName, isApproved, createdAt)
+       VALUES (?, ?, ?, ?, ?, 0, NOW())`,
+      [orderCode, name, content, rating || 5, productName]
+    );
+
+    res.json({ success: true, message: 'Testimoni berhasil dikirim dan menunggu persetujuan admin' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Get all testimonials
+app.get('/api/admin/testimonials', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const testimonials = await conn.query('SELECT * FROM Testimonial ORDER BY createdAt DESC');
+    res.json(testimonials);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Update/approve testimonial
+app.put('/api/admin/testimonials/:id', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    const { isApproved } = req.body;
+
+    await conn.query('UPDATE Testimonial SET isApproved = ? WHERE id = ?', [isApproved ? 1 : 0, id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Delete testimonial
+app.delete('/api/admin/testimonials/:id', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+
+    await conn.query('DELETE FROM Testimonial WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// ==================== ARTICLE ROUTES ====================
+
+// Get published articles (public)
+app.get('/api/articles', async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const articles = await conn.query(
+      'SELECT id, title, slug, content, image, isPublished, createdAt FROM Article WHERE isPublished = 1 ORDER BY createdAt DESC'
+    );
+    res.json(articles);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Get single article by slug (public)
+app.get('/api/articles/:slug', async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { slug } = req.params;
+    const articles = await conn.query('SELECT * FROM Article WHERE slug = ? AND isPublished = 1', [slug]);
+
+    if (articles.length === 0) {
+      return res.status(404).json({ error: 'Artikel tidak ditemukan' });
+    }
+
+    res.json(articles[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Get all articles
+app.get('/api/admin/articles', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const articles = await conn.query('SELECT * FROM Article ORDER BY createdAt DESC');
+    res.json(articles);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Create article
+app.post('/api/admin/articles', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { title, slug, content, image, isPublished } = req.body;
+
+    const result = await conn.query(
+      `INSERT INTO Article (title, slug, content, image, isPublished, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+      [title, slug, content, image || null, isPublished ? 1 : 0]
+    );
+
+    res.json({ success: true, id: Number(result.insertId) });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Slug artikel sudah digunakan' });
+    }
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Update article
+app.put('/api/admin/articles/:id', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    const { title, slug, content, image, isPublished } = req.body;
+
+    await conn.query(
+      `UPDATE Article SET title = ?, slug = ?, content = ?, image = ?, isPublished = ?, updatedAt = NOW() WHERE id = ?`,
+      [title, slug, content, image || null, isPublished ? 1 : 0, id]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Slug artikel sudah digunakan' });
+    }
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+// Admin: Delete article
+app.delete('/api/admin/articles/:id', authMiddleware, async (req, res) => {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+
+    await conn.query('DELETE FROM Article WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+

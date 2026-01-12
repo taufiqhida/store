@@ -1,0 +1,11 @@
+// Admin Components
+export { default as AdminHeader } from './AdminHeader.vue'
+export { default as AdminTabs } from './AdminTabs.vue'
+export { default as Pagination } from './Pagination.vue'
+export { default as ProductsTab } from './ProductsTab.vue'
+export { default as CategoriesTab } from './CategoriesTab.vue'
+export { default as PaymentsTab } from './PaymentsTab.vue'
+export { default as DiscountsTab } from './DiscountsTab.vue'
+export { default as FlashSalesTab } from './FlashSalesTab.vue'
+export { default as TestimonialsTab } from './TestimonialsTab.vue'
+export { default as ArticlesTab } from './ArticlesTab.vue'

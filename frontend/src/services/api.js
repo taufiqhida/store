@@ -63,4 +63,27 @@ export const uploadImage = async (file) => {
     });
 };
 
+// ==================== FLASH SALE APIs ====================
+export const getFlashSales = () => api.get('/flash-sales');
+export const getAdminFlashSales = () => api.get('/admin/flash-sales');
+export const createFlashSale = (data) => api.post('/admin/flash-sales', data);
+export const updateFlashSale = (id, data) => api.put(`/admin/flash-sales/${id}`, data);
+export const deleteFlashSale = (id) => api.delete(`/admin/flash-sales/${id}`);
+
+// ==================== TESTIMONIAL APIs ====================
+export const getTestimonials = () => api.get('/testimonials');
+export const submitTestimonial = (data) => api.post('/testimonials', data);
+export const getAdminTestimonials = () => api.get('/admin/testimonials');
+export const updateTestimonial = (id, data) => api.put(`/admin/testimonials/${id}`, data);
+export const deleteTestimonial = (id) => api.delete(`/admin/testimonials/${id}`);
+
+// ==================== ARTICLE APIs ====================
+export const getArticles = () => api.get('/articles');
+export const getArticle = (slug) => api.get(`/articles/${slug}`);
+export const getAdminArticles = () => api.get('/admin/articles');
+export const createArticle = (data) => api.post('/admin/articles', data);
+export const updateArticle = (id, data) => api.put(`/admin/articles/${id}`, data);
+export const deleteArticle = (id) => api.delete(`/admin/articles/${id}`);
+
 export default api;
+

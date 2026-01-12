@@ -5,6 +5,8 @@ import RootApp from './RootApp.vue'
 import App from './App.vue'
 import AdminLogin from './views/AdminLogin.vue'
 import AdminDashboard from './views/AdminDashboard.vue'
+import ArticleList from './views/ArticleList.vue'
+import ArticleDetail from './views/ArticleDetail.vue'
 
 // Create router
 const router = createRouter({
@@ -12,7 +14,9 @@ const router = createRouter({
     routes: [
         { path: '/', component: App },
         { path: '/admin', component: AdminLogin },
-        { path: '/admin/dashboard', component: AdminDashboard }
+        { path: '/admin/dashboard', component: AdminDashboard },
+        { path: '/artikel', component: ArticleList },
+        { path: '/artikel/:slug', component: ArticleDetail }
     ]
 })
 
@@ -20,3 +24,4 @@ const router = createRouter({
 const app = createApp(RootApp)
 app.use(router)
 app.mount('#app')
+
