@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/api';
+// API URL dari environment variable - ubah di file .env
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -11,7 +12,7 @@ const api = axios.create({
 
 // Add token to requests if available
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('admin_token');
+    const token = localStorage.getItem('adminToken');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -27,6 +28,7 @@ export const createOrder = (data) => api.post('/orders', data);
 
 // Admin APIs
 export const adminLogin = (credentials) => api.post('/admin/login', credentials);
+export const getAdminProducts = () => api.get('/admin/products');
 export const createProduct = (data) => api.post('/admin/products', data);
 export const updateProduct = (id, data) => api.put(`/admin/products/${id}`, data);
 export const deleteProduct = (id) => api.delete(`/admin/products/${id}`);

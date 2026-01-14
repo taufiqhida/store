@@ -24,8 +24,8 @@ const login = async () => {
       password: password.value
     })
 
-    localStorage.setItem('admin_token', res.data.token)
-    localStorage.setItem('admin_user', JSON.stringify(res.data.admin))
+    localStorage.setItem('adminToken', res.data.token)
+    localStorage.setItem('adminName', res.data.admin.name || res.data.admin.username)
     router.push('/admin/dashboard')
   } catch (err) {
     error.value = 'Username atau password salah'

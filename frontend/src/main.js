@@ -13,7 +13,8 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         { path: '/', component: App },
-        { path: '/admin', component: AdminLogin },
+        { path: '/admin', redirect: '/admin/dashboard' },
+        { path: '/admin/login', component: AdminLogin },
         { path: '/admin/dashboard', component: AdminDashboard },
         { path: '/artikel', component: ArticleList },
         { path: '/artikel/:slug', component: ArticleDetail }

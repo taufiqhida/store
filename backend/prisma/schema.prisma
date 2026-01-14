@@ -73,18 +73,23 @@ model Discount {
 }
 
 model Order {
-  id            Int      @id @default(autoincrement())
-  orderCode     String   @unique // Kode pemesanan: TFQ-YYYYMMDD-XXXX
-  productName   String
-  variantName   String
-  quantity      Int
-  price         Float
-  uniqueCode    Int
-  totalPrice    Float
-  paymentMethod String
-  status        String   @default("pending")
-  whatsappSent  Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id                 Int      @id @default(autoincrement())
+  orderCode          String   @unique // Kode pemesanan: TFQ-YYYYMMDD-XXXX
+  productName        String
+  variantName        String
+  quantity           Int
+  price              Float
+  paymentMethod      String
+  paymentFee         Float    @default(0)
+  paymentAccountInfo String?  @db.Text
+  discountCode       String?
+  discountAmount     Float    @default(0)
+  uniqueCode         Int
+  totalPrice         Float
+  buyerMessage       String?  @db.Text
+  status             String   @default("pending")
+  whatsappSent       Boolean  @default(false)
+  createdAt          DateTime @default(now())
 }
 
 model StoreSettings {

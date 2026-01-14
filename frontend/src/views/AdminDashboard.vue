@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
-  getProducts, getSettings, createProduct, updateProduct, deleteProduct, updateSettings,
+  getAdminProducts, getSettings, createProduct, updateProduct, deleteProduct, updateSettings,
   getAdminCategories, createCategory, updateCategory, deleteCategory,
   getAdminPaymentMethods, createPaymentMethod, updatePaymentMethod, deletePaymentMethod,
   getAdminDiscounts, createDiscount, updateDiscount, deleteDiscount,
@@ -115,7 +115,7 @@ const fetchData = async () => {
   loading.value = true
   try {
     const [prodRes, catRes, pmRes, discRes, fsRes, testiRes, artRes, settRes] = await Promise.all([
-      getProducts(), getAdminCategories(), getAdminPaymentMethods(), getAdminDiscounts(),
+      getAdminProducts(), getAdminCategories(), getAdminPaymentMethods(), getAdminDiscounts(),
       getAdminFlashSales(), getAdminTestimonials(), getAdminArticles(), getSettings()
     ])
     products.value = prodRes.data
