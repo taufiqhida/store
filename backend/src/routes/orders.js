@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
 
         // Generate WhatsApp message
         const template = settings.whatsapp_message_template ||
-            `Halo kak, saya mau pesan:\n\n📦 Produk: {product}\n📋 Varian: {variant}\n🔢 Jumlah: {quantity}\n💰 Harga: Rp {price}\n🎫 Kode Unik: +Rp {unique_code}\n💳 Total: Rp {total}\n📱 Pembayaran: {payment}\n\n📝 Kode Order: {order_code}`;
+            `Halo kak, saya mau pesan:\n\n🎫 *KODE PEMESANAN: {order_code}*\n\n📦 Produk: {product}\n📋 Varian: {variant}\n🔢 Jumlah: {quantity}\n💰 Harga: Rp {price}\n🎲 Kode Unik: +Rp {unique_code}\n💳 Total: Rp {total}\n📱 Pembayaran: {payment}`;
 
         const formatPrice = (num) => new Intl.NumberFormat('id-ID').format(num);
 
