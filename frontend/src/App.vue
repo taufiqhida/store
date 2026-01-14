@@ -28,6 +28,9 @@ const selectedPayment = ref(null)
 const loading = ref(false)
 const uniqueCode = ref(0)
 
+// Order success state
+const orderSuccess = ref(null)
+
 // Discount state
 const discountCode = ref('')
 const discountLoading = ref(false)
@@ -180,14 +183,27 @@ const checkout = async () => {
       discountAmount: discountAmount.value,
       buyerMessage: buyerMessage.value || null
     })
-    window.open(res.data.whatsappUrl, '_blank')
+    // Save order info and show success modal
+    orderSuccess.value = {
+      orderCode: res.data.orderCode,
+      whatsappUrl: res.data.whatsappUrl,
+      total: totalPrice.value,
+      productName: selectedProduct.value.name,
+      variantName: selectedVariant.value.name
+    }
     closeModal()
+    window.open(res.data.whatsappUrl, '_blank')
   } catch (error) {
     console.error('Error creating order:', error)
     alert('Terjadi kesalahan, silakan coba lagi')
   } finally {
     loading.value = false
   }
+}
+
+// Close order success modal
+const closeOrderSuccess = () => {
+  orderSuccess.value = null
 }
 
 // Testimonial
@@ -333,6 +349,31 @@ const enterShop = () => { showHero.value = false }
       @close="showTestimonialModal = false"
       @submit="handleSubmitTestimonial"
     />
+
+    <!-- Order Success Modal -->
+    <div v-if="orderSuccess" class="order-success-overlay" @click.self="closeOrderSuccess">
+      <div class="order-success-modal">
+        <div class="success-icon">✅</div>
+        <h2>Pesanan Berhasil!</h2>
+        <p>Simpan kode pemesanan Anda:</p>
+        <div class="order-code">{{ orderSuccess.orderCode }}</div>
+        <div class="order-details">
+          <p><strong>Produk:</strong> {{ orderSuccess.productName }}</p>
+          <p><strong>Varian:</strong> {{ orderSuccess.variantName }}</p>
+          <p><strong>Total:</strong> Rp {{ new Intl.NumberFormat('id-ID').format(orderSuccess.total) }}</p>
+        </div>
+        <p class="order-note">📱 WhatsApp sudah terbuka di tab baru. Kirim pesan untuk konfirmasi pesanan.</p>
+        <div class="order-actions">
+          <button class="btn-copy" @click="navigator.clipboard.writeText(orderSuccess.orderCode); alert('Kode disalin!')">
+            📋 Salin Kode
+          </button>
+          <button class="btn-wa" @click="window.open(orderSuccess.whatsappUrl, '_blank')">
+            💬 Buka WhatsApp
+          </button>
+          <button class="btn-close" @click="closeOrderSuccess">Tutup</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -389,5 +430,124 @@ const enterShop = () => { showHero.value = false }
   background: #3B82F6;
   color: white;
   border-color: #3B82F6;
+}
+
+/* Order Success Modal */
+.order-success-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 20px;
+}
+
+.order-success-modal {
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 450px;
+  width: 100%;
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.order-success-modal h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #059669;
+  margin-bottom: 10px;
+}
+
+.order-code {
+  background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 800;
+  padding: 20px;
+  border-radius: 16px;
+  margin: 20px 0;
+  letter-spacing: 3px;
+  font-family: monospace;
+}
+
+.order-details {
+  background: #f9fafb;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.order-details p {
+  margin: 8px 0;
+  font-size: 0.95rem;
+}
+
+.order-note {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+.order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.order-actions button {
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-copy {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-copy:hover {
+  background: #e5e7eb;
+}
+
+.btn-wa {
+  background: #25D366;
+  color: white;
+}
+
+.btn-wa:hover {
+  background: #1DA851;
+}
+
+.btn-close {
+  background: #3B82F6;
+  color: white;
+}
+
+.btn-close:hover {
+  background: #2563EB;
 }
 </style>
