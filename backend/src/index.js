@@ -134,8 +134,37 @@ app.get('/api/admin/testimonials', authMiddleware, async (req, res) => {
     if (conn) conn.release();
   }
 });
-app.put('/api/admin/testimonials/:id', authMiddleware, require('./routes/testimonials'));
-app.delete('/api/admin/testimonials/:id', authMiddleware, require('./routes/testimonials'));
+
+app.put('/api/admin/testimonials/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    const { isApproved } = req.body;
+    await conn.query('UPDATE Testimonial SET isApproved = ? WHERE id = ?', [isApproved ? 1 : 0, id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete('/api/admin/testimonials/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    await conn.query('DELETE FROM Testimonial WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 // Admin articles
 app.get('/api/admin/articles', authMiddleware, async (req, res) => {
