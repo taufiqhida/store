@@ -26,12 +26,23 @@ router.post('/', async (req, res) => {
         conn = await pool.getConnection();
         const { orderCode, name, content, rating } = req.body;
 
-        const orders = await conn.query('SELECT productName FROM `Order` WHERE orderCode = ?', [orderCode]);
-        if (orders.length === 0) {
-            return res.status(400).json({ error: 'Kode pemesanan tidak valid' });
+        console.log('Checking order code:', orderCode);
+
+        // Trim and uppercase the order code for consistency
+        const cleanOrderCode = (orderCode || '').trim().toUpperCase();
+
+        if (!cleanOrderCode) {
+            return res.status(400).json({ error: 'Kode pemesanan harus diisi' });
         }
 
-        const existing = await conn.query('SELECT id FROM Testimonial WHERE orderCode = ?', [orderCode]);
+        const orders = await conn.query('SELECT productName FROM `Order` WHERE UPPER(orderCode) = ?', [cleanOrderCode]);
+        console.log('Found orders:', orders);
+
+        if (orders.length === 0) {
+            return res.status(400).json({ error: 'Kode pemesanan tidak ditemukan. Pastikan kode sesuai dengan yang ada di pesan WhatsApp.' });
+        }
+
+        const existing = await conn.query('SELECT id FROM Testimonial WHERE UPPER(orderCode) = ?', [cleanOrderCode]);
         if (existing.length > 0) {
             return res.status(400).json({ error: 'Testimoni untuk pesanan ini sudah ada' });
         }
@@ -40,11 +51,12 @@ router.post('/', async (req, res) => {
         await conn.query(
             `INSERT INTO Testimonial (orderCode, name, content, rating, productName, isApproved, createdAt)
        VALUES (?, ?, ?, ?, ?, 0, NOW())`,
-            [orderCode, name, content, rating || 5, productName]
+            [cleanOrderCode, name, content, rating || 5, productName]
         );
 
         res.json({ success: true, message: 'Testimoni berhasil dikirim dan menunggu persetujuan admin' });
     } catch (error) {
+        console.error('Testimonial error:', error);
         res.status(500).json({ error: error.message });
     } finally {
         if (conn) conn.release();
