@@ -50,17 +50,17 @@ const getBadgeClass = (badge) => {
 }
 
 .product-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 .product-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .product-image {
@@ -68,7 +68,7 @@ const getBadgeClass = (badge) => {
   height: 180px;
   object-fit: contain;
   padding: 20px;
-  background: #f9fafb;
+  background: var(--bg-secondary);
 }
 
 .product-body {
@@ -103,11 +103,12 @@ const getBadgeClass = (badge) => {
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 5px;
+  color: var(--text);
 }
 
 .product-category {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 15px;
 }
 
@@ -120,12 +121,12 @@ const getBadgeClass = (badge) => {
 .price-current {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #3B82F6;
+  color: var(--accent);
 }
 
 .price-original {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-decoration: line-through;
 }
 

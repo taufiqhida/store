@@ -5,12 +5,15 @@
       <div class="nav-links">
         <router-link to="/artikel" class="nav-link">📰 Artikel</router-link>
         <router-link to="/admin/login" class="nav-link">Admin</router-link>
+        <ThemeToggle />
       </div>
     </div>
   </nav>
 </template>
 
 <script setup>
+import ThemeToggle from './ThemeToggle.vue'
+
 defineProps({
   storeName: String
 })
@@ -22,11 +25,11 @@ defineProps({
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--navbar-bg);
   backdrop-filter: blur(10px);
   padding: 15px 0;
   z-index: 1000;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
 }
 
 .container {
@@ -44,13 +47,14 @@ defineProps({
 .nav-logo {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #000;
+  color: var(--primary);
   text-decoration: none;
 }
 
 .nav-links {
   display: flex;
-  gap: 20px;
+  gap: 15px;
+  align-items: center;
 }
 
 .nav-link {
@@ -59,10 +63,11 @@ defineProps({
   font-weight: 500;
   transition: all 0.2s ease;
   text-decoration: none;
-  color: inherit;
+  color: var(--text);
 }
 
 .nav-link:hover {
-  background: #f9fafb;
+  background: var(--bg-secondary);
 }
 </style>
+

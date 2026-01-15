@@ -185,7 +185,31 @@ app.put('/api/admin/articles/:id', authMiddleware, require('./routes/articles'))
 app.delete('/api/admin/articles/:id', authMiddleware, require('./routes/articles'));
 
 // Admin settings
-app.put('/api/admin/settings', authMiddleware, require('./routes/settings'));
+app.put('/api/admin/settings', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const settings = req.body;
+
+    for (const [key, value] of Object.entries(settings)) {
+      // Check if setting exists, if not insert it
+      const existing = await conn.query('SELECT id FROM StoreSettings WHERE `key` = ?', [key]);
+      if (existing.length > 0) {
+        await conn.query('UPDATE StoreSettings SET value = ? WHERE `key` = ?', [value, key]);
+      } else {
+        await conn.query('INSERT INTO StoreSettings (`key`, value) VALUES (?, ?)', [key, value]);
+      }
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 // Admin credentials
 app.put('/api/admin/credentials', authMiddleware, require('./routes/auth'));

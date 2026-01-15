@@ -12,6 +12,8 @@ import Footer from './components/public/Footer.vue'
 import Pagination from './components/public/Pagination.vue'
 import ProductCheckoutModal from './components/public/ProductCheckoutModal.vue'
 import TestimonialModal from './components/public/TestimonialModal.vue'
+import ComingSoonPage from './components/public/ComingSoonPage.vue'
+import MaintenancePage from './components/public/MaintenancePage.vue'
 
 // State
 const showHero = ref(true)
@@ -93,6 +95,9 @@ const discountAmount = computed(() => {
 // Subtotal & Total
 const subtotal = computed(() => selectedVariant.value ? selectedVariant.value.price * quantity.value : 0)
 const totalPrice = computed(() => subtotal.value - discountAmount.value + paymentFee.value + uniqueCode.value)
+
+// Site Mode (coming_soon, maintenance, live)
+const siteMode = computed(() => settings.value.site_mode || 'live')
 
 // Lifecycle
 onMounted(async () => fetchData())
@@ -239,17 +244,36 @@ const enterShop = () => { showHero.value = false }
 
 <template>
   <div class="app">
-    <!-- Hero Section -->
-    <HeroSection 
-      :show="showHero"
+    <!-- Coming Soon Page -->
+    <ComingSoonPage 
+      v-if="siteMode === 'coming_soon'"
       :store-name="settings.store_name || 'TOKO'"
       :tagline="settings.store_tagline || 'Selamat Datang'"
-      @enter="enterShop"
+      :message="settings.coming_soon_message || 'Kami sedang menyiapkan sesuatu yang luar biasa untuk Anda!'"
+      :target-date="settings.coming_soon_date || ''"
     />
 
-    <!-- Main Store -->
-    <template v-if="!showHero">
-      <Navbar :store-name="settings.store_name || 'TOKO'" />
+    <!-- Maintenance Page -->
+    <MaintenancePage 
+      v-else-if="siteMode === 'maintenance'"
+      :store-name="settings.store_name || 'TOKO'"
+      :message="settings.maintenance_message || 'Kami sedang melakukan perbaikan untuk memberikan pengalaman yang lebih baik.'"
+      :end-date="settings.maintenance_end_date || ''"
+    />
+
+    <!-- Normal Store (Live Mode) -->
+    <template v-else>
+      <!-- Hero Section -->
+      <HeroSection 
+        :show="showHero"
+        :store-name="settings.store_name || 'TOKO'"
+        :tagline="settings.store_tagline || 'Selamat Datang'"
+        @enter="enterShop"
+      />
+
+      <!-- Main Store -->
+      <template v-if="!showHero">
+        <Navbar :store-name="settings.store_name || 'TOKO'" />
 
       <main class="main-content">
         <!-- Flash Sales -->
@@ -312,8 +336,12 @@ const enterShop = () => { showHero.value = false }
         />
       </main>
 
-      <Footer :store-name="settings.store_name || 'TOKO'" />
+        <Footer :store-name="settings.store_name || 'TOKO'" />
+      </template>
     </template>
+
+    <!-- Modals (always available when in live mode) -->
+    <template v-if="siteMode === 'live'">
 
     <!-- Product Checkout Modal -->
     <ProductCheckoutModal 
@@ -374,6 +402,7 @@ const enterShop = () => { showHero.value = false }
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 

@@ -221,13 +221,14 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 }
 
 .product-modal {
-  background: white;
+  background: var(--modal-bg);
   border-radius: 24px;
   max-width: 900px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  color: var(--text);
 }
 
 .modal-close {
@@ -237,11 +238,12 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f3f4f6;
+  background: var(--bg-secondary);
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
   z-index: 1;
+  color: var(--text);
 }
 
 .modal-grid {
@@ -251,7 +253,7 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 
 .modal-left {
   padding: 30px;
-  background: #f9fafb;
+  background: var(--bg-secondary);
 }
 
 .modal-image {
@@ -265,16 +267,17 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 5px;
+  color: var(--text);
 }
 
 .modal-category {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-bottom: 15px;
 }
 
 .modal-desc {
-  color: #4b5563;
+  color: var(--text-secondary);
   line-height: 1.6;
   font-size: 0.9rem;
 }
@@ -287,6 +290,7 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 12px;
+  color: var(--text);
 }
 
 .variant-list, .payment-list {
@@ -298,21 +302,22 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 
 .variant-btn, .payment-btn {
   padding: 12px 16px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--border);
   border-radius: 12px;
-  background: white;
+  background: var(--card-bg);
   cursor: pointer;
   transition: all 0.2s;
   text-align: left;
+  color: var(--text);
 }
 
 .variant-btn:hover:not(.disabled), .payment-btn:hover {
-  border-color: #3B82F6;
+  border-color: var(--accent);
 }
 
 .variant-btn.selected, .payment-btn.selected {
-  border-color: #3B82F6;
-  background: #eff6ff;
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.1);
 }
 
 .variant-btn.disabled {
@@ -324,11 +329,12 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   display: block;
   font-weight: 600;
   font-size: 0.9rem;
+  color: var(--text);
 }
 
 .variant-price {
   font-size: 0.85rem;
-  color: #3B82F6;
+  color: var(--accent);
 }
 
 .variant-status {
@@ -350,7 +356,7 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 
 .payment-fee {
   font-size: 0.75rem;
-  color: #d97706;
+  color: var(--warning);
   display: block;
 }
 
@@ -362,6 +368,7 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   display: block;
   font-weight: 600;
   margin-bottom: 8px;
+  color: var(--text);
 }
 
 .quantity-controls {
@@ -373,20 +380,23 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 .quantity-controls button {
   width: 36px;
   height: 36px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--border);
   border-radius: 8px;
-  background: white;
+  background: var(--card-bg);
   font-size: 1.2rem;
   cursor: pointer;
+  color: var(--text);
 }
 
 .quantity-controls input {
   width: 60px;
   text-align: center;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--border);
   border-radius: 8px;
   padding: 8px;
   font-size: 1rem;
+  background: var(--input-bg);
+  color: var(--text);
 }
 
 .discount-section, .message-section {
@@ -398,6 +408,7 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   font-weight: 600;
   margin-bottom: 8px;
   font-size: 0.9rem;
+  color: var(--text);
 }
 
 .discount-input-group {
@@ -408,8 +419,10 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 .discount-input-group input {
   flex: 1;
   padding: 10px 12px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--border);
   border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
 }
 
 .apply-btn, .remove-btn {
@@ -421,12 +434,12 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 }
 
 .apply-btn {
-  background: #3B82F6;
+  background: var(--accent);
   color: white;
 }
 
 .remove-btn {
-  background: #f3f4f6;
+  background: var(--bg-secondary);
   color: #dc2626;
 }
 
@@ -437,7 +450,7 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 }
 
 .discount-success {
-  color: #059669;
+  color: var(--success);
   font-size: 0.8rem;
   margin-top: 5px;
 }
@@ -445,14 +458,16 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 .message-section textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--border);
   border-radius: 8px;
   font-size: 0.9rem;
   resize: none;
+  background: var(--input-bg);
+  color: var(--text);
 }
 
 .summary-section {
-  background: #f9fafb;
+  background: var(--bg-secondary);
   padding: 16px;
   border-radius: 12px;
   margin-bottom: 20px;
@@ -463,22 +478,24 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   justify-content: space-between;
   padding: 8px 0;
   font-size: 0.9rem;
+  color: var(--text);
 }
 
 .summary-row.discount {
-  color: #059669;
+  color: var(--success);
 }
 
 .summary-row.unique {
-  color: #d97706;
+  color: var(--warning);
 }
 
 .summary-row.total {
   font-size: 1.1rem;
   font-weight: 700;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
   margin-top: 8px;
   padding-top: 12px;
+  color: var(--accent);
 }
 
 .checkout-btn {
