@@ -2,7 +2,7 @@ const mariadb = require('mariadb');
 const bcrypt = require('bcryptjs');
 
 async function main() {
-    console.log('🔧 Creating admin user...');
+    console.log('🔧 Creating admin users...');
 
     const conn = await mariadb.createConnection({
         host: 'localhost',
@@ -12,23 +12,39 @@ async function main() {
     });
 
     try {
-        // Check if admin exists
-        const existing = await conn.query('SELECT id FROM Admin WHERE username = ?', ['admin']);
+        // Admin 1: admin
+        const existing1 = await conn.query('SELECT id FROM Admin WHERE username = ?', ['admin']);
+        const hashedAdmin = await bcrypt.hash('admin123', 10);
 
-        if (existing.length > 0) {
-            console.log('Admin user already exists. Updating password...');
-            const hashedPassword = await bcrypt.hash('admin123', 10);
-            await conn.query('UPDATE Admin SET password = ? WHERE username = ?', [hashedPassword, 'admin']);
+        if (existing1.length > 0) {
+            await conn.query('UPDATE Admin SET password = ? WHERE username = ?', [hashedAdmin, 'admin']);
+            console.log('✅ Admin "admin" updated');
         } else {
-            console.log('Creating new admin user...');
-            const hashedPassword = await bcrypt.hash('admin123', 10);
             await conn.query(
                 'INSERT INTO Admin (username, password, name, createdAt) VALUES (?, ?, ?, NOW())',
-                ['admin', hashedPassword, 'Administrator']
+                ['admin', hashedAdmin, 'Administrator']
             );
+            console.log('✅ Admin "admin" created');
         }
 
-        console.log('✅ Admin user ready (username: admin, password: admin123)');
+        // Admin 2: zaidan
+        const existing2 = await conn.query('SELECT id FROM Admin WHERE username = ?', ['zaidan']);
+        const hashedZaidan = await bcrypt.hash('zaidan', 10);
+
+        if (existing2.length > 0) {
+            await conn.query('UPDATE Admin SET password = ? WHERE username = ?', [hashedZaidan, 'zaidan']);
+            console.log('✅ Admin "zaidan" updated');
+        } else {
+            await conn.query(
+                'INSERT INTO Admin (username, password, name, createdAt) VALUES (?, ?, ?, NOW())',
+                ['zaidan', hashedZaidan, 'Zaidan']
+            );
+            console.log('✅ Admin "zaidan" created');
+        }
+
+        console.log('\n=== Admin Users Ready ===');
+        console.log('1. admin / admin123');
+        console.log('2. zaidan / zaidan');
     } catch (error) {
         console.error('❌ Error:', error);
     } finally {
@@ -37,3 +53,4 @@ async function main() {
 }
 
 main();
+
