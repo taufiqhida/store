@@ -92,9 +92,69 @@ app.get('/api/admin/discounts', authMiddleware, async (req, res) => {
     if (conn) conn.release();
   }
 });
-app.post('/api/admin/discounts', authMiddleware, require('./routes/discounts'));
-app.put('/api/admin/discounts/:id', authMiddleware, require('./routes/discounts'));
-app.delete('/api/admin/discounts/:id', authMiddleware, require('./routes/discounts'));
+app.post('/api/admin/discounts', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { code, name, type, value, maxDiscount, minPurchase, applyTo, productIds, usageLimit, expiresAt, isActive } = req.body;
+
+    const result = await conn.query(
+      `INSERT INTO Discount (code, name, type, value, maxDiscount, minPurchase, applyTo, productIds, usageLimit, expiresAt, isActive, createdAt) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [code.toUpperCase(), name, type || 'fixed', value, maxDiscount || null, minPurchase || null, applyTo || 'all', productIds ? JSON.stringify(productIds) : null, usageLimit || null, expiresAt || null, isActive !== false ? 1 : 0]
+    );
+
+    res.json({ success: true, id: Number(result.insertId) });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Kode diskon sudah digunakan' });
+    }
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.put('/api/admin/discounts/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    const { code, name, type, value, maxDiscount, minPurchase, applyTo, productIds, usageLimit, expiresAt, isActive } = req.body;
+
+    await conn.query(
+      `UPDATE Discount SET code = ?, name = ?, type = ?, value = ?, maxDiscount = ?, minPurchase = ?, 
+       applyTo = ?, productIds = ?, usageLimit = ?, expiresAt = ?, isActive = ? WHERE id = ?`,
+      [code.toUpperCase(), name, type, value, maxDiscount || null, minPurchase || null, applyTo || 'all', productIds ? JSON.stringify(productIds) : null, usageLimit || null, expiresAt || null, isActive ? 1 : 0, id]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Kode diskon sudah digunakan' });
+    }
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+
+app.delete('/api/admin/discounts/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    await conn.query('DELETE FROM Discount WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 // Admin flash sales
 app.get('/api/admin/flash-sales', authMiddleware, async (req, res) => {
