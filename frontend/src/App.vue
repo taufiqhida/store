@@ -14,6 +14,10 @@ import ProductCheckoutModal from './components/public/ProductCheckoutModal.vue'
 import TestimonialModal from './components/public/TestimonialModal.vue'
 import ComingSoonPage from './components/public/ComingSoonPage.vue'
 import MaintenancePage from './components/public/MaintenancePage.vue'
+import CartSlider from './components/public/CartSlider.vue'
+
+// Cart composable
+import { useCart } from './composables/useCart'
 
 // State
 const showHero = ref(true)
@@ -50,6 +54,11 @@ const testimonialForm = ref({ orderCode: '', name: '', content: '', rating: 5 })
 const testimonialLoading = ref(false)
 const testimonialError = ref('')
 const testimonialSuccess = ref('')
+
+// Cart
+const { cartItems, cartSubtotal, openCart, clearCart, closeCart } = useCart()
+const showCartToast = ref(false)
+const cartToastMessage = ref('')
 
 // Pagination
 const pageProducts = ref(1)
@@ -240,6 +249,43 @@ const handleSubmitTestimonial = async (form) => {
 }
 
 const enterShop = () => { showHero.value = false }
+
+// Cart toast notification
+const showAddedToCartToast = () => {
+  cartToastMessage.value = '🛒 Berhasil ditambahkan ke keranjang!'
+  showCartToast.value = true
+  setTimeout(() => {
+    showCartToast.value = false
+  }, 3000)
+}
+
+// Cart checkout handler
+const handleCartCheckout = async () => {
+  if (cartItems.value.length === 0) {
+    alert('Keranjang masih kosong')
+    return
+  }
+  
+  // Build WhatsApp message from cart
+  const waNumber = settings.value.whatsapp_number || '6281234567890'
+  let message = `Halo kak, saya mau pesan:\n\n`
+  
+  cartItems.value.forEach((item, index) => {
+    message += `${index + 1}. ${item.productName}\n`
+    message += `   Varian: ${item.variantName}\n`
+    message += `   Jumlah: ${item.quantity}\n`
+    message += `   Harga: Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}\n\n`
+  })
+  
+  message += `💰 Total: Rp ${new Intl.NumberFormat('id-ID').format(cartSubtotal.value)}`
+  
+  const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`
+  window.open(waUrl, '_blank')
+  
+  // Clear and close cart after checkout
+  clearCart()
+  closeCart()
+}
 </script>
 
 <template>
@@ -343,7 +389,6 @@ const enterShop = () => { showHero.value = false }
     <!-- Modals (always available when in live mode) -->
     <template v-if="siteMode === 'live'">
 
-    <!-- Product Checkout Modal -->
     <ProductCheckoutModal 
       :product="selectedProduct"
       :payment-methods="paymentMethods.filter(pm => pm.isActive)"
@@ -365,7 +410,19 @@ const enterShop = () => { showHero.value = false }
       @apply-discount="applyDiscount"
       @remove-discount="removeDiscount"
       @checkout="checkout"
+      @added-to-cart="showAddedToCartToast"
     />
+
+    <!-- Cart Slider -->
+    <CartSlider @checkout="handleCartCheckout" />
+
+    <!-- Cart Toast -->
+    <Transition name="toast">
+      <div v-if="showCartToast" class="cart-toast" @click="openCart">
+        {{ cartToastMessage }}
+        <span class="view-cart">Lihat Keranjang →</span>
+      </div>
+    </Transition>
 
     <!-- Testimonial Modal -->
     <TestimonialModal 
@@ -578,5 +635,55 @@ const enterShop = () => { showHero.value = false }
 
 .btn-close:hover {
   background: #2563EB;
+}
+
+/* Cart Toast */
+.cart-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 1rem;
+  z-index: 4000;
+  cursor: pointer;
+  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  animation: bounce 0.5s ease;
+}
+
+.cart-toast:hover {
+  transform: translateX(-50%) scale(1.02);
+}
+
+.view-cart {
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(30px);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(30px);
 }
 </style>

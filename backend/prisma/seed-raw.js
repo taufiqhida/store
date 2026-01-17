@@ -149,13 +149,49 @@ Mohon diproses ya, terima kasih! 🙏`;
         }
         console.log('✅ Store settings created');
 
-        // Create admin user
+        // Create admin users (2 accounts)
         const hashedPassword = await bcrypt.hash('admin123', 10);
+        const hashedPassword2 = await bcrypt.hash('zaidan123', 10);
+
         await conn.query(
             'INSERT INTO Admin (username, password, name, createdAt) VALUES (?, ?, ?, NOW())',
             ['admin', hashedPassword, 'Administrator']
         );
-        console.log('✅ Admin user created (username: admin, password: admin123)');
+        await conn.query(
+            'INSERT INTO Admin (username, password, name, createdAt) VALUES (?, ?, ?, NOW())',
+            ['zaidan', hashedPassword2, 'Zaidan']
+        );
+        console.log('✅ Admin users created:');
+        console.log('   - admin / admin123');
+        console.log('   - zaidan / zaidan123');
+
+        // Create sample orders for analytics
+        const sampleOrders = [
+            { orderCode: 'ORD-ABC123', productName: 'ChatGPT Plus', variantName: 'Private 1 Bulan', quantity: 1, price: 85000, paymentMethod: 'QRIS', status: 'completed', daysAgo: 0 },
+            { orderCode: 'ORD-DEF456', productName: 'Netflix Premium', variantName: 'Private 1 Bulan', quantity: 2, price: 45000, paymentMethod: 'GoPay', status: 'completed', daysAgo: 1 },
+            { orderCode: 'ORD-GHI789', productName: 'Spotify Premium', variantName: 'Private 1 Bulan', quantity: 1, price: 15000, paymentMethod: 'OVO', status: 'completed', daysAgo: 2 },
+            { orderCode: 'ORD-JKL012', productName: 'Canva Pro', variantName: 'Private 1 Tahun', quantity: 1, price: 150000, paymentMethod: 'DANA', status: 'completed', daysAgo: 3 },
+            { orderCode: 'ORD-MNO345', productName: 'Youtube Premium', variantName: 'Private 1 Bulan', quantity: 3, price: 20000, paymentMethod: 'Bank Transfer', status: 'pending', daysAgo: 0 },
+            { orderCode: 'ORD-PQR678', productName: 'Microsoft Office 365', variantName: 'Personal 1 Tahun', quantity: 1, price: 150000, paymentMethod: 'QRIS', status: 'confirmed', daysAgo: 1 },
+            { orderCode: 'ORD-STU901', productName: 'ChatGPT Plus', variantName: 'Sharing 1 Bulan', quantity: 5, price: 35000, paymentMethod: 'GoPay', status: 'completed', daysAgo: 5 },
+            { orderCode: 'ORD-VWX234', productName: 'Duolingo Plus', variantName: 'Private 1 Bulan', quantity: 1, price: 35000, paymentMethod: 'OVO', status: 'completed', daysAgo: 7 },
+            { orderCode: 'ORD-YZA567', productName: 'Followers Instagram', variantName: '1000 Followers', quantity: 2, price: 50000, paymentMethod: 'DANA', status: 'processing', daysAgo: 0 },
+            { orderCode: 'ORD-BCD890', productName: 'Netflix Premium', variantName: 'Sharing 1 Bulan', quantity: 10, price: 20000, paymentMethod: 'ShopeePay', status: 'completed', daysAgo: 10 }
+        ];
+
+        for (const order of sampleOrders) {
+            const uniqueCode = Math.floor(Math.random() * 999) + 1;
+            const totalPrice = (order.price * order.quantity) + uniqueCode;
+            const createdAt = new Date();
+            createdAt.setDate(createdAt.getDate() - order.daysAgo);
+
+            await conn.query(
+                `INSERT INTO \`Order\` (orderCode, productName, variantName, quantity, price, paymentMethod, uniqueCode, totalPrice, status, createdAt) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [order.orderCode, order.productName, order.variantName, order.quantity, order.price, order.paymentMethod, uniqueCode, totalPrice, order.status, createdAt]
+            );
+        }
+        console.log('✅ Sample orders created (10 orders for analytics)');
 
         console.log('🎉 Seeding completed!');
     } catch (error) {
@@ -166,3 +202,4 @@ Mohon diproses ya, terima kasih! 🙏`;
 }
 
 main();
+

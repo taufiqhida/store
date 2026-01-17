@@ -9,7 +9,8 @@ import {
   uploadImage, updateAdminCredentials,
   getAdminFlashSales, createFlashSale, updateFlashSale, deleteFlashSale,
   getAdminTestimonials, updateTestimonial, deleteTestimonial,
-  getAdminArticles, createArticle, updateArticle, deleteArticle
+  getAdminArticles, createArticle, updateArticle, deleteArticle,
+  getAdminOrders, getOrderAnalytics, updateOrderStatus, deleteOrder
 } from '../services/api'
 
 // Import Components
@@ -22,6 +23,7 @@ import DiscountsTab from '../components/admin/DiscountsTab.vue'
 import FlashSalesTab from '../components/admin/FlashSalesTab.vue'
 import TestimonialsTab from '../components/admin/TestimonialsTab.vue'
 import ArticlesTab from '../components/admin/ArticlesTab.vue'
+import OrdersTab from '../components/admin/OrdersTab.vue'
 
 // Import Modals
 import ProductModal from '../components/modals/ProductModal.vue'
@@ -32,6 +34,7 @@ import DiscountModal from '../components/modals/DiscountModal.vue'
 import ArticleModal from '../components/modals/ArticleModal.vue'
 import SettingsModal from '../components/modals/SettingsModal.vue'
 import CredentialsModal from '../components/modals/CredentialsModal.vue'
+import OrderDetailModal from '../components/modals/OrderDetailModal.vue'
 
 const router = useRouter()
 
@@ -43,11 +46,13 @@ const discounts = ref([])
 const flashSales = ref([])
 const testimonials = ref([])
 const articles = ref([])
+const orders = ref([])
+const orderAnalytics = ref({})
 const settings = ref({})
 const adminName = ref('')
 
 // UI state
-const activeTab = ref('products')
+const activeTab = ref('orders')
 const loading = ref(true)
 
 // Modal visibility
@@ -59,6 +64,7 @@ const showFlashSaleModal = ref(false)
 const showArticleModal = ref(false)
 const showSettingsModal = ref(false)
 const showCredentialsModal = ref(false)
+const showOrderDetailModal = ref(false)
 
 // Editing state
 const editingProduct = ref(null)
@@ -76,7 +82,11 @@ const pageDiscounts = ref(1)
 const pageFlashSales = ref(1)
 const pageTestimonials = ref(1)
 const pageArticles = ref(1)
+const pageOrders = ref(1)
 const itemsPerPage = 10
+
+// Selected order for detail view
+const selectedOrder = ref(null)
 
 // Forms
 const productForm = ref({ name: '', slug: '', description: '', image: '', badge: '', categoryId: '', variants: [], isActive: true })
@@ -91,6 +101,7 @@ const credentialsError = ref('')
 
 // Tabs config
 const tabs = computed(() => [
+  { id: 'orders', icon: '📋', label: 'Pesanan', count: orders.value.length },
   { id: 'products', icon: '📦', label: 'Produk', count: products.value.length },
   { id: 'categories', icon: '📁', label: 'Kategori', count: categories.value.length },
   { id: 'payments', icon: '💳', label: 'Pembayaran', count: paymentMethods.value.length },
@@ -114,9 +125,9 @@ onMounted(async () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const [prodRes, catRes, pmRes, discRes, fsRes, testiRes, artRes, settRes] = await Promise.all([
+    const [prodRes, catRes, pmRes, discRes, fsRes, testiRes, artRes, ordRes, analyticsRes, settRes] = await Promise.all([
       getAdminProducts(), getAdminCategories(), getAdminPaymentMethods(), getAdminDiscounts(),
-      getAdminFlashSales(), getAdminTestimonials(), getAdminArticles(), getSettings()
+      getAdminFlashSales(), getAdminTestimonials(), getAdminArticles(), getAdminOrders(), getOrderAnalytics(), getSettings()
     ])
     products.value = prodRes.data
     categories.value = catRes.data
@@ -125,6 +136,8 @@ const fetchData = async () => {
     flashSales.value = fsRes.data
     testimonials.value = testiRes.data
     articles.value = artRes.data
+    orders.value = ordRes.data
+    orderAnalytics.value = analyticsRes.data
     settings.value = settRes.data
     settingsForm.value = { ...settRes.data }
   } catch (error) {
@@ -459,6 +472,32 @@ const handleImageUpload = async (file) => {
   const res = await uploadImage(formData)
   return res.data.url
 }
+
+// ========== ORDER FUNCTIONS ==========
+const viewOrderDetail = (order) => {
+  selectedOrder.value = order
+  showOrderDetailModal.value = true
+}
+
+const handleUpdateOrderStatus = async (order, newStatus) => {
+  try {
+    await updateOrderStatus(order.id, newStatus)
+    fetchData()
+  } catch (error) {
+    alert('Gagal mengupdate status pesanan')
+  }
+}
+
+const confirmDeleteOrder = async (order) => {
+  if (confirm(`Hapus pesanan "${order.orderCode}"?`)) {
+    try {
+      await deleteOrder(order.id)
+      fetchData()
+    } catch (error) {
+      alert('Gagal menghapus pesanan')
+    }
+  }
+}
 </script>
 
 <template>
@@ -486,6 +525,18 @@ const handleImageUpload = async (file) => {
 
       <!-- Main Content -->
       <main class="admin-main">
+        <!-- Orders Tab -->
+        <OrdersTab 
+          v-if="activeTab === 'orders'"
+          :orders="orders"
+          :analytics="orderAnalytics"
+          v-model:current-page="pageOrders"
+          :items-per-page="itemsPerPage"
+          @view="viewOrderDetail"
+          @updateStatus="handleUpdateOrderStatus"
+          @delete="confirmDeleteOrder"
+        />
+
         <!-- Products Tab -->
         <ProductsTab 
           v-if="activeTab === 'products'"
@@ -632,6 +683,12 @@ const handleImageUpload = async (file) => {
       :error="credentialsError"
       @close="showCredentialsModal = false"
       @save="saveCredentials"
+    />
+
+    <OrderDetailModal 
+      v-if="showOrderDetailModal && selectedOrder"
+      :order="selectedOrder"
+      @close="showOrderDetailModal = false"
     />
   </div>
 </template>

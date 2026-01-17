@@ -15,6 +15,7 @@ const orderRoutes = require('./routes/orders');
 const authRoutes = require('./routes/auth');
 const settingsRoutes = require('./routes/settings');
 const adminProductRoutes = require('./routes/admin/products');
+const adminOrderRoutes = require('./routes/admin/orders');
 
 // Import middleware & config
 const { authMiddleware } = require('./middleware/auth');
@@ -44,6 +45,7 @@ app.use('/api/admin', authRoutes);
 
 // ==================== ADMIN ROUTES ====================
 app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
 
 // Admin categories
 app.get('/api/admin/categories', authMiddleware, async (req, res) => {

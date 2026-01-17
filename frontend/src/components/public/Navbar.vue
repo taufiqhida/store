@@ -4,7 +4,8 @@
       <a class="nav-logo" href="#">{{ storeName }}</a>
       <div class="nav-links">
         <router-link to="/artikel" class="nav-link">📰 Artikel</router-link>
-        <router-link to="/admin/login" class="nav-link">Admin</router-link>
+        <CartIcon />
+        <router-link to="/admin/login" class="nav-link admin-link">Admin</router-link>
         <ThemeToggle />
       </div>
     </div>
@@ -13,6 +14,7 @@
 
 <script setup>
 import ThemeToggle from './ThemeToggle.vue'
+import CartIcon from './CartIcon.vue'
 
 defineProps({
   storeName: String
@@ -53,7 +55,7 @@ defineProps({
 
 .nav-links {
   display: flex;
-  gap: 15px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -69,5 +71,13 @@ defineProps({
 .nav-link:hover {
   background: var(--bg-secondary);
 }
-</style>
 
+.admin-link {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.admin-link:hover {
+  opacity: 1;
+}
+</style>

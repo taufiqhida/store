@@ -121,13 +121,23 @@
             </div>
           </div>
           
-          <button 
-            class="checkout-btn"
-            @click="$emit('checkout')"
-            :disabled="!selectedVariant || !selectedPayment || loading"
-          >
-            {{ loading ? 'Memproses...' : '🛒 Pesan via WhatsApp' }}
-          </button>
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button 
+              class="add-cart-btn"
+              @click="handleAddToCart"
+              :disabled="!selectedVariant"
+            >
+              🛒 Tambah ke Keranjang
+            </button>
+            <button 
+              class="checkout-btn"
+              @click="$emit('checkout')"
+              :disabled="!selectedVariant || !selectedPayment || loading"
+            >
+              {{ loading ? 'Memproses...' : '📱 Pesan Langsung' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -136,6 +146,9 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useCart } from '../../composables/useCart'
+
+const { addToCart } = useCart()
 
 const props = defineProps({
   product: Object,
@@ -158,7 +171,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   'close', 'update:modelVariant', 'update:modelPayment', 'update:modelQuantity',
-  'update:modelDiscountCode', 'update:modelBuyerMessage', 'applyDiscount', 'removeDiscount', 'checkout'
+  'update:modelDiscountCode', 'update:modelBuyerMessage', 'applyDiscount', 'removeDiscount', 'checkout', 'addedToCart'
 ])
 
 const selectedVariant = ref(props.modelVariant)
@@ -203,6 +216,14 @@ const updateQty = (e) => {
 
 watch(discountCode, (v) => emit('update:modelDiscountCode', v))
 watch(buyerMessage, (v) => emit('update:modelBuyerMessage', v))
+
+const handleAddToCart = () => {
+  if (props.product && selectedVariant.value) {
+    addToCart(props.product, selectedVariant.value, quantity.value)
+    emit('addedToCart')
+    emit('close')
+  }
+}
 
 const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 </script>
@@ -498,26 +519,55 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   color: var(--accent);
 }
 
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.add-cart-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.add-cart-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
+.add-cart-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .checkout-btn {
   width: 100%;
-  padding: 16px;
+  padding: 14px;
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   border: none;
   border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .checkout-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
 }
 
 .checkout-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -532,6 +582,10 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 
   .modal-right {
     padding: 20px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
   }
 }
 </style>
