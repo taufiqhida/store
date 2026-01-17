@@ -41,14 +41,54 @@
             </div>
           </div>
 
+          <!-- Payment Selection -->
+          <div class="payment-section">
+            <h4>💳 Pilih Pembayaran</h4>
+            <div class="payment-list">
+              <button 
+                v-for="pm in paymentMethods" 
+                :key="pm.id"
+                :class="['payment-btn', { selected: selectedPayment?.id === pm.id }]"
+                @click="selectedPayment = pm"
+              >
+                <span class="payment-icon">{{ pm.icon }}</span>
+                <span class="payment-name">{{ pm.name }}</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Cart Summary -->
           <div class="cart-summary">
-            <div class="summary-row">
-              <span>Total ({{ cartCount }} item)</span>
-              <span class="summary-total">Rp {{ formatPrice(cartSubtotal) }}</span>
+            <!-- Booking Code & Unique Code -->
+            <div class="order-info-box">
+              <div class="order-info-row">
+                <span class="order-label">📋 Kode Booking</span>
+                <span class="order-code">{{ bookingCode }}</span>
+              </div>
+              <div class="order-info-row">
+                <span class="order-label">🔑 Kode Unik</span>
+                <span class="unique-code">+Rp {{ uniqueCode }}</span>
+              </div>
             </div>
-            <button class="checkout-btn" @click="handleCheckout">
-              Checkout via WhatsApp
+
+            <div class="summary-row">
+              <span>Subtotal ({{ cartCount }} item)</span>
+              <span>Rp {{ formatPrice(cartSubtotal) }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Kode Unik</span>
+              <span class="unique-price">+Rp {{ uniqueCode }}</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total Bayar</span>
+              <span class="summary-total">Rp {{ formatPrice(grandTotal) }}</span>
+            </div>
+            <button 
+              class="checkout-btn" 
+              @click="handleCheckout"
+              :disabled="!selectedPayment"
+            >
+              {{ selectedPayment ? '📱 Checkout via WhatsApp' : 'Pilih Pembayaran Dulu' }}
             </button>
             <button class="clear-btn" @click="handleClearCart">
               Kosongkan Keranjang
@@ -61,7 +101,15 @@
 </template>
 
 <script setup>
+import { ref, computed, watch } from 'vue'
 import { useCart } from '../../composables/useCart'
+
+const props = defineProps({
+  paymentMethods: {
+    type: Array,
+    default: () => []
+  }
+})
 
 const { 
   cartItems, 
@@ -75,6 +123,29 @@ const {
 } = useCart()
 
 const emit = defineEmits(['checkout'])
+
+const selectedPayment = ref(null)
+
+// Generate booking code once when cart opens
+const bookingCode = ref('')
+const uniqueCode = ref(0)
+
+// Generate codes when cart opens
+watch(isCartOpen, (open) => {
+  if (open && cartItems.value.length > 0) {
+    // Generate booking code
+    const today = new Date()
+    const dateStr = today.toISOString().slice(0,10).replace(/-/g, '')
+    const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase()
+    bookingCode.value = `TFQ-${dateStr}-${randomCode}`
+    
+    // Generate unique code
+    uniqueCode.value = Math.floor(Math.random() * 999) + 1
+  }
+})
+
+// Grand total = subtotal + unique code
+const grandTotal = computed(() => cartSubtotal.value + uniqueCode.value)
 
 const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 
@@ -99,7 +170,15 @@ const handleClearCart = () => {
 }
 
 const handleCheckout = () => {
-  emit('checkout')
+  if (!selectedPayment.value) {
+    alert('Pilih metode pembayaran terlebih dahulu')
+    return
+  }
+  emit('checkout', {
+    payment: selectedPayment.value,
+    bookingCode: bookingCode.value,
+    uniqueCode: uniqueCode.value
+  })
 }
 </script>
 
@@ -413,5 +492,114 @@ const handleCheckout = () => {
     justify-content: space-between;
     margin-top: 10px;
   }
+}
+
+/* Payment Section */
+.payment-section {
+  padding: 15px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.payment-section h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: var(--text, #1f2937);
+}
+
+.payment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.payment-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 2px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--card-bg, #fff);
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text, #1f2937);
+}
+
+.payment-btn:hover {
+  border-color: var(--accent, #3b82f6);
+}
+
+.payment-btn.selected {
+  border-color: var(--accent, #3b82f6);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.payment-icon {
+  font-size: 1.2rem;
+}
+
+.payment-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.checkout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #9ca3af;
+}
+
+/* Order Info Box */
+.order-info-box {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border: 2px dashed #0ea5e9;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.order-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.order-info-row:last-child {
+  margin-bottom: 0;
+}
+
+.order-label {
+  font-size: 0.85rem;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+.order-code {
+  font-family: monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0c4a6e;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.unique-code {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.summary-row.total {
+  border-top: 1px solid var(--border, #e5e7eb);
+  padding-top: 12px;
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.unique-price {
+  color: #059669;
 }
 </style>

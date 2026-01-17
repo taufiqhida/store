@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { getCategories, getProducts, getPaymentMethods, getSettings, createOrder, validateDiscount, getFlashSales, getTestimonials, submitTestimonial } from './services/api'
+import { getCategories, getProducts, getPaymentMethods, getSettings, createOrder, createCartOrder, validateDiscount, getFlashSales, getTestimonials, submitTestimonial } from './services/api'
 
 // Import Components
 import HeroSection from './components/public/HeroSection.vue'
@@ -260,31 +260,49 @@ const showAddedToCartToast = () => {
 }
 
 // Cart checkout handler
-const handleCartCheckout = async () => {
+const handleCartCheckout = async (checkoutData) => {
   if (cartItems.value.length === 0) {
     alert('Keranjang masih kosong')
     return
   }
   
-  // Build WhatsApp message from cart
-  const waNumber = settings.value.whatsapp_number || '6281234567890'
-  let message = `Halo kak, saya mau pesan:\n\n`
+  if (!checkoutData?.payment) {
+    alert('Pilih metode pembayaran terlebih dahulu')
+    return
+  }
   
-  cartItems.value.forEach((item, index) => {
-    message += `${index + 1}. ${item.productName}\n`
-    message += `   Varian: ${item.variantName}\n`
-    message += `   Jumlah: ${item.quantity}\n`
-    message += `   Harga: Rp ${new Intl.NumberFormat('id-ID').format(item.price * item.quantity)}\n\n`
-  })
+  const { payment, bookingCode, uniqueCode } = checkoutData
   
-  message += `💰 Total: Rp ${new Intl.NumberFormat('id-ID').format(cartSubtotal.value)}`
-  
-  const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`
-  window.open(waUrl, '_blank')
-  
-  // Clear and close cart after checkout
-  clearCart()
-  closeCart()
+  try {
+    // Prepare cart items for API
+    const items = cartItems.value.map(item => ({
+      productName: item.productName,
+      variantName: item.variantName,
+      quantity: item.quantity,
+      price: item.price
+    }))
+    
+    // Call API to save orders to database
+    const response = await createCartOrder({
+      items,
+      paymentMethod: payment.name,
+      bookingCode,
+      uniqueCode
+    })
+    
+    // Open WhatsApp with message from API
+    if (response.data.whatsappUrl) {
+      window.open(response.data.whatsappUrl, '_blank')
+    }
+    
+    // Clear and close cart after successful checkout
+    clearCart()
+    closeCart()
+    
+  } catch (error) {
+    console.error('Error creating cart order:', error)
+    alert('Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.')
+  }
 }
 </script>
 
@@ -414,7 +432,10 @@ const handleCartCheckout = async () => {
     />
 
     <!-- Cart Slider -->
-    <CartSlider @checkout="handleCartCheckout" />
+    <CartSlider 
+      :payment-methods="paymentMethods.filter(pm => pm.isActive)"
+      @checkout="handleCartCheckout" 
+    />
 
     <!-- Cart Toast -->
     <Transition name="toast">

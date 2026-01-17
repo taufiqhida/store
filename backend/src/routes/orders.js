@@ -72,4 +72,82 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Create cart order (multi-item)
+router.post('/cart', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const { items, paymentMethod, bookingCode, uniqueCode } = req.body;
+
+        if (!items || items.length === 0) {
+            return res.status(400).json({ error: 'Keranjang kosong' });
+        }
+
+        // Get settings for WhatsApp
+        const settingsRows = await conn.query('SELECT `key`, value FROM StoreSettings');
+        const settings = {};
+        settingsRows.forEach(row => { settings[row.key] = row.value; });
+
+        const formatPrice = (num) => new Intl.NumberFormat('id-ID').format(num);
+        let subtotal = 0;
+
+        // Calculate subtotal first
+        for (const item of items) {
+            subtotal += item.price * item.quantity;
+        }
+
+        // Use unique code from frontend (same as what user sees in cart)
+        const orderUniqueCode = uniqueCode || Math.floor(Math.random() * 999) + 1;
+        const grandTotal = subtotal + orderUniqueCode;
+
+        // Save each item as an order with same booking code
+        for (const item of items) {
+            const itemTotal = item.price * item.quantity;
+
+            await conn.query(
+                `INSERT INTO \`Order\` (orderCode, productName, variantName, quantity, price, paymentMethod, uniqueCode, totalPrice, status, createdAt)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+                [bookingCode, item.productName, item.variantName, item.quantity, item.price, paymentMethod, orderUniqueCode, itemTotal + orderUniqueCode]
+            );
+        }
+
+        // Build WhatsApp message
+        const waNumber = settings.whatsapp_number || '6281234567890';
+
+        let message = `Halo Taufiq Store! 👋\n\n`;
+        message += `📋 *KODE BOOKING: ${bookingCode}*\n\n`;
+        message += `Saya mau pesan:\n`;
+        message += `━━━━━━━━━━━━━━━\n`;
+
+        items.forEach((item, index) => {
+            message += `${index + 1}. *${item.productName}*\n`;
+            message += `   📦 Varian: ${item.variantName}\n`;
+            message += `   🔢 Jumlah: ${item.quantity}\n`;
+            message += `   💰 Harga: Rp ${formatPrice(item.price * item.quantity)}\n\n`;
+        });
+
+        message += `━━━━━━━━━━━━━━━\n`;
+        message += `💵 Subtotal: Rp ${formatPrice(subtotal)}\n`;
+        message += `🔑 Kode Unik: +Rp ${orderUniqueCode}\n`;
+        message += `💳 Pembayaran: ${paymentMethod}\n`;
+        message += `━━━━━━━━━━━━━━━\n`;
+        message += `💰 *TOTAL BAYAR: Rp ${formatPrice(grandTotal)}*\n\n`;
+        message += `Mohon diproses ya, terima kasih! 🙏`;
+
+        const whatsappUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
+
+        res.json({
+            success: true,
+            bookingCode,
+            orderCount: items.length,
+            whatsappUrl
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
 module.exports = router;
+

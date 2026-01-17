@@ -25,6 +25,7 @@ export const getProduct = (id) => api.get(`/products/${id}`);
 export const getPaymentMethods = () => api.get('/payment-methods');
 export const getSettings = () => api.get('/settings');
 export const createOrder = (data) => api.post('/orders', data);
+export const createCartOrder = (data) => api.post('/orders/cart', data);
 
 // Admin APIs
 export const adminLogin = (credentials) => api.post('/admin/login', credentials);
