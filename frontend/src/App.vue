@@ -79,6 +79,14 @@ const paginatedTestimonials = computed(() => {
 })
 const totalPagesTestimonials = computed(() => Math.ceil(testimonials.value.length / testimonialsPerPage))
 
+// Rating calculations
+const totalReviews = computed(() => testimonials.value?.length || 0)
+const averageRating = computed(() => {
+  if (!testimonials.value || testimonials.value.length === 0) return 0
+  const sum = testimonials.value.reduce((acc, t) => acc + (t.rating || 5), 0)
+  return sum / testimonials.value.length
+})
+
 // Payment fee calculation
 const paymentFee = computed(() => {
   if (!selectedPayment.value || !selectedVariant.value) return 0
@@ -332,6 +340,7 @@ const handleCartCheckout = async (checkoutData) => {
         :show="showHero"
         :store-name="settings.store_name || 'TOKO'"
         :tagline="settings.store_tagline || 'Selamat Datang'"
+        :testimonials="testimonials"
         @enter="enterShop"
       />
 
@@ -373,6 +382,7 @@ const handleCartCheckout = async (checkoutData) => {
 
             <ProductGrid 
               :products="paginatedProducts"
+              :testimonials="testimonials"
               @select="openProductModal"
             />
 

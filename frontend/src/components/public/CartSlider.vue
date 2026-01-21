@@ -57,6 +57,37 @@
             </div>
           </div>
 
+          <!-- Promo Code Section -->
+          <div class="promo-section">
+            <h4>🏷️ Kode Promo</h4>
+            <div v-if="!appliedDiscount" class="promo-input-row">
+              <input 
+                v-model="promoCode" 
+                type="text" 
+                placeholder="Masukkan kode promo"
+                class="promo-input"
+                @keyup.enter="applyPromoCode"
+              />
+              <button 
+                class="promo-btn" 
+                @click="applyPromoCode"
+                :disabled="promoLoading || !promoCode"
+              >
+                {{ promoLoading ? '...' : 'Pakai' }}
+              </button>
+            </div>
+            <div v-else class="promo-applied">
+              <div class="promo-info">
+                <span class="promo-badge">✅ {{ appliedDiscount.code }}</span>
+                <span class="promo-discount">
+                  -{{ appliedDiscount.type === 'percent' ? appliedDiscount.value + '%' : 'Rp ' + formatPrice(appliedDiscount.value) }}
+                </span>
+              </div>
+              <button class="promo-remove" @click="removePromoCode">×</button>
+            </div>
+            <p v-if="promoError" class="promo-error">{{ promoError }}</p>
+          </div>
+
           <!-- Cart Summary -->
           <div class="cart-summary">
             <!-- Booking Code & Unique Code -->
@@ -74,6 +105,10 @@
             <div class="summary-row">
               <span>Subtotal ({{ cartCount }} item)</span>
               <span>Rp {{ formatPrice(cartSubtotal) }}</span>
+            </div>
+            <div v-if="appliedDiscount" class="summary-row discount">
+              <span>Diskon ({{ appliedDiscount.code }})</span>
+              <span class="discount-price">-Rp {{ formatPrice(discountAmount) }}</span>
             </div>
             <div class="summary-row">
               <span>Kode Unik</span>
@@ -126,6 +161,12 @@ const emit = defineEmits(['checkout'])
 
 const selectedPayment = ref(null)
 
+// Promo code state
+const promoCode = ref('')
+const promoLoading = ref(false)
+const promoError = ref('')
+const appliedDiscount = ref(null)
+
 // Generate booking code once when cart opens
 const bookingCode = ref('')
 const uniqueCode = ref(0)
@@ -144,8 +185,20 @@ watch(isCartOpen, (open) => {
   }
 })
 
-// Grand total = subtotal + unique code
-const grandTotal = computed(() => cartSubtotal.value + uniqueCode.value)
+// Calculate discount amount
+const discountAmount = computed(() => {
+  if (!appliedDiscount.value) return 0
+  const disc = appliedDiscount.value
+  if (disc.type === 'percent') {
+    let amount = Math.round((cartSubtotal.value * disc.value) / 100)
+    if (disc.maxDiscount && amount > disc.maxDiscount) amount = disc.maxDiscount
+    return amount
+  }
+  return disc.value || 0
+})
+
+// Grand total = subtotal - discount + unique code
+const grandTotal = computed(() => cartSubtotal.value - discountAmount.value + uniqueCode.value)
 
 const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 
@@ -166,7 +219,44 @@ const removeItem = (item) => {
 const handleClearCart = () => {
   if (confirm('Yakin ingin mengosongkan keranjang?')) {
     clearCart()
+    appliedDiscount.value = null
+    promoCode.value = ''
   }
+}
+
+// Apply promo code
+const applyPromoCode = async () => {
+  if (!promoCode.value) return
+  promoLoading.value = true
+  promoError.value = ''
+  try {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+    const response = await fetch(`${baseUrl}/discounts/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        code: promoCode.value, 
+        subtotal: cartSubtotal.value 
+      })
+    })
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error || 'Kode tidak valid')
+    }
+    appliedDiscount.value = data.discount
+    promoCode.value = ''
+  } catch (error) {
+    promoError.value = error.message || 'Kode tidak valid'
+  } finally {
+    promoLoading.value = false
+  }
+}
+
+// Remove promo code
+const removePromoCode = () => {
+  appliedDiscount.value = null
+  promoCode.value = ''
+  promoError.value = ''
 }
 
 const handleCheckout = () => {
@@ -177,7 +267,9 @@ const handleCheckout = () => {
   emit('checkout', {
     payment: selectedPayment.value,
     bookingCode: bookingCode.value,
-    uniqueCode: uniqueCode.value
+    uniqueCode: uniqueCode.value,
+    discountCode: appliedDiscount.value?.code || null,
+    discountAmount: discountAmount.value
   })
 }
 </script>
@@ -601,5 +693,127 @@ const handleCheckout = () => {
 
 .unique-price {
   color: #059669;
+}
+
+/* Promo Section */
+.promo-section {
+  padding: 15px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.promo-section h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: var(--text, #1f2937);
+}
+
+.promo-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.promo-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  background: var(--card-bg, #fff);
+  color: var(--text, #1f2937);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.promo-input:focus {
+  border-color: var(--accent, #3b82f6);
+}
+
+.promo-input::placeholder {
+  color: var(--text-secondary, #9ca3af);
+}
+
+.promo-btn {
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.promo-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.promo-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.promo-applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border: 2px solid #10b981;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.promo-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.promo-badge {
+  font-weight: 600;
+  color: #059669;
+  font-size: 0.9rem;
+}
+
+.promo-discount {
+  font-weight: 700;
+  color: #10b981;
+  font-size: 0.95rem;
+}
+
+.promo-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.promo-remove:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.promo-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin: 8px 0 0 0;
+}
+
+.summary-row.discount {
+  color: #10b981;
+}
+
+.discount-price {
+  color: #10b981;
+  font-weight: 600;
 }
 </style>

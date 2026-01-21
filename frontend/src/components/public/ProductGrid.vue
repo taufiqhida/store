@@ -14,6 +14,17 @@
         </span>
         <h3 class="product-title">{{ product.name }}</h3>
         <p class="product-category">{{ product.category?.name }}</p>
+        
+        <!-- Product Rating (per product) -->
+        <div class="product-rating" v-if="getProductReviewCount(product.name) > 0">
+          <span class="rating-stars">
+            <span v-for="star in 5" :key="star" :class="['star', { filled: star <= Math.round(getProductRating(product.name)) }]">
+              {{ star <= Math.round(getProductRating(product.name)) ? '★' : '☆' }}
+            </span>
+          </span>
+          <span class="rating-text">{{ getProductRating(product.name).toFixed(1) }} ({{ getProductReviewCount(product.name) }})</span>
+        </div>
+        
         <div class="product-price" v-if="product.variants?.length">
           <span class="price-current">Rp {{ formatPrice(product.variants[0].price) }}</span>
           <span class="price-original">Rp {{ formatPrice(product.variants[0].originalPrice) }}</span>
@@ -24,10 +35,14 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   products: {
     type: Array,
     required: true
+  },
+  testimonials: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -39,6 +54,25 @@ const getBadgeClass = (badge) => {
   if (badge === 'Terlaris') return 'badge-terlaris'
   if (badge === 'Instant') return 'badge-instant'
   return ''
+}
+
+// Get reviews for a specific product
+const getProductReviews = (productName) => {
+  if (!props.testimonials || !productName) return []
+  return props.testimonials.filter(t => t.productName === productName)
+}
+
+// Get review count for a specific product
+const getProductReviewCount = (productName) => {
+  return getProductReviews(productName).length
+}
+
+// Get average rating for a specific product
+const getProductRating = (productName) => {
+  const reviews = getProductReviews(productName)
+  if (reviews.length === 0) return 0
+  const sum = reviews.reduce((acc, t) => acc + (t.rating || 5), 0)
+  return sum / reviews.length
 }
 </script>
 
@@ -134,5 +168,33 @@ const getBadgeClass = (badge) => {
   .product-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
+}
+
+/* Product Rating Styles */
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.rating-stars .star {
+  font-size: 0.9rem;
+  color: #d1d5db;
+}
+
+.rating-stars .star.filled {
+  color: #fbbf24;
+}
+
+.rating-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 </style>

@@ -29,11 +29,19 @@ router.get('/', async (req, res) => {
 
         const products = await conn.query(query, params);
 
-        // Fetch variants for each product
-        for (const product of products) {
-            const variants = await conn.query('SELECT * FROM Variant WHERE productId = ?', [product.id]);
-            product.variants = variants;
-            product.category = { name: product.categoryName, slug: product.categorySlug };
+        // Optimized: Fetch all variants in single query (fix N+1)
+        if (products.length > 0) {
+            const productIds = products.map(p => p.id);
+            const allVariants = await conn.query(
+                'SELECT * FROM Variant WHERE productId IN (?)',
+                [productIds]
+            );
+
+            // Map variants to products
+            for (const product of products) {
+                product.variants = allVariants.filter(v => v.productId === product.id);
+                product.category = { name: product.categoryName, slug: product.categorySlug };
+            }
         }
 
         res.json(products);

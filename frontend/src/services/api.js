@@ -52,7 +52,7 @@ export const getAdminDiscounts = () => api.get('/admin/discounts');
 export const createDiscount = (data) => api.post('/admin/discounts', data);
 export const updateDiscount = (id, data) => api.put(`/admin/discounts/${id}`, data);
 export const deleteDiscount = (id) => api.delete(`/admin/discounts/${id}`);
-export const validateDiscount = (code, productId, subtotal) => api.post('/validate-discount', { code, productId, subtotal });
+export const validateDiscount = (data) => api.post('/discounts/validate', data);
 
 // Admin Credentials
 export const updateAdminCredentials = (data) => api.put('/admin/credentials', data);

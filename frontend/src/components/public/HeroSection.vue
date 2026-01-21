@@ -3,6 +3,23 @@
     <div class="hero-content">
       <h1 class="hero-logo">{{ storeName }}</h1>
       <p class="hero-tagline">{{ tagline }}</p>
+      
+      <!-- Customer Rating Display -->
+      <div v-if="totalReviews > 0" class="hero-rating">
+        <div class="rating-stars">
+          <span v-for="star in 5" :key="star" class="star" :class="{ filled: star <= Math.round(averageRating) }">
+            {{ star <= Math.round(averageRating) ? '★' : '☆' }}
+          </span>
+        </div>
+        <div class="rating-info">
+          <span class="rating-value">{{ averageRating.toFixed(1) }}</span>
+          <span class="rating-separator">/</span>
+          <span class="rating-max">5</span>
+          <span class="rating-divider">•</span>
+          <span class="rating-count">{{ totalReviews }} ulasan</span>
+        </div>
+      </div>
+      
       <button class="hero-btn" @click="$emit('enter')">
         🛒 Lihat Produk
       </button>
@@ -11,13 +28,28 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   show: Boolean,
   storeName: String,
-  tagline: String
+  tagline: String,
+  testimonials: {
+    type: Array,
+    default: () => []
+  }
 })
 
 defineEmits(['enter'])
+
+// Calculate average rating from testimonials
+const totalReviews = computed(() => props.testimonials?.length || 0)
+
+const averageRating = computed(() => {
+  if (!props.testimonials || props.testimonials.length === 0) return 0
+  const sum = props.testimonials.reduce((acc, t) => acc + (t.rating || 5), 0)
+  return sum / props.testimonials.length
+})
 </script>
 
 <style scoped>
@@ -66,7 +98,80 @@ defineEmits(['enter'])
   font-size: 1.5rem;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 40px;
+  margin-bottom: 20px;
+}
+
+/* Hero Rating Styles */
+.hero-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 30px;
+  animation: fadeInUp 0.6s ease 0.3s backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rating-stars {
+  display: flex;
+  gap: 4px;
+}
+
+.rating-stars .star {
+  font-size: 1.8rem;
+  color: rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.rating-stars .star.filled {
+  color: #fbbf24;
+  text-shadow: 0 0 15px rgba(251, 191, 36, 0.6), 0 0 30px rgba(251, 191, 36, 0.3);
+  animation: starPulse 2s ease-in-out infinite;
+}
+
+@keyframes starPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.rating-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.rating-value {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #fbbf24;
+}
+
+.rating-separator,
+.rating-max {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.rating-divider {
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0 4px;
+}
+
+.rating-count {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
 }
 
 .hero-btn {
