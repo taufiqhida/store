@@ -15,6 +15,7 @@ import TestimonialModal from './components/public/TestimonialModal.vue'
 import ComingSoonPage from './components/public/ComingSoonPage.vue'
 import MaintenancePage from './components/public/MaintenancePage.vue'
 import CartSlider from './components/public/CartSlider.vue'
+import WhatsAppFloat from './components/public/WhatsAppFloat.vue'
 
 // Cart composable
 import { useCart } from './composables/useCart'
@@ -491,6 +492,9 @@ const handleCartCheckout = async (checkoutData) => {
       </div>
     </div>
     </template>
+
+    <!-- Floating WhatsApp Button -->
+    <WhatsAppFloat :whatsapp-number="settings.whatsapp_number" />
   </div>
 </template>
 
