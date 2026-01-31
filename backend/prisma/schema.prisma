@@ -98,12 +98,20 @@ model StoreSettings {
   value String @db.Text
 }
 
-model Admin {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
-  name      String
-  createdAt DateTime @default(now())
+model AdminUser {
+  id          Int       @id @default(autoincrement())
+  username    String    @unique
+  password    String
+  name        String
+  email       String?
+  role        String    @default("ADMIN") // SUPER_ADMIN or ADMIN
+  permissions String    @default("[]") // JSON array of permissions
+  isActive    Boolean   @default(true) // For soft delete and login access
+  deletedAt   DateTime? // Timestamp when soft deleted (null if active)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("admin_users")
 }
 
 // ==================== NEW FEATURES ====================

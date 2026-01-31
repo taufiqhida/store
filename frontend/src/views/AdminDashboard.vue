@@ -10,8 +10,10 @@ import {
   getAdminFlashSales, createFlashSale, updateFlashSale, deleteFlashSale,
   getAdminTestimonials, updateTestimonial, deleteTestimonial,
   getAdminArticles, createArticle, updateArticle, deleteArticle,
-  getAdminOrders, getOrderAnalytics, updateOrderStatus, deleteOrder
+  getAdminOrders, getOrderAnalytics, updateOrderStatus, deleteOrder,
+  getAdminUsers, createAdminUser, updateAdminUser, deleteAdminUser, restoreAdminUser
 } from '../services/api'
+import { usePermissions } from '../composables/usePermissions'
 
 // Import Components
 import AdminHeader from '../components/admin/AdminHeader.vue'
@@ -24,6 +26,7 @@ import FlashSalesTab from '../components/admin/FlashSalesTab.vue'
 import TestimonialsTab from '../components/admin/TestimonialsTab.vue'
 import ArticlesTab from '../components/admin/ArticlesTab.vue'
 import OrdersTab from '../components/admin/OrdersTab.vue'
+import AdminUsersTab from '../components/admin/AdminUsersTab.vue'
 
 // Import Modals
 import ProductModal from '../components/modals/ProductModal.vue'
@@ -35,8 +38,10 @@ import ArticleModal from '../components/modals/ArticleModal.vue'
 import SettingsModal from '../components/modals/SettingsModal.vue'
 import CredentialsModal from '../components/modals/CredentialsModal.vue'
 import OrderDetailModal from '../components/modals/OrderDetailModal.vue'
+import AdminUserModal from '../components/modals/AdminUserModal.vue'
 
 const router = useRouter()
+const { hasPermission, clearPermissions } = usePermissions()
 
 // Data state
 const products = ref([])
@@ -50,6 +55,7 @@ const orders = ref([])
 const orderAnalytics = ref({})
 const settings = ref({})
 const adminName = ref('')
+const adminUsers = ref([])
 
 // UI state
 const activeTab = ref('orders')
@@ -65,6 +71,7 @@ const showArticleModal = ref(false)
 const showSettingsModal = ref(false)
 const showCredentialsModal = ref(false)
 const showOrderDetailModal = ref(false)
+const showAdminUserModal = ref(false)
 
 // Editing state
 const editingProduct = ref(null)
@@ -73,6 +80,7 @@ const editingPayment = ref(null)
 const editingDiscount = ref(null)
 const editingFlashSale = ref(null)
 const editingArticle = ref(null)
+const editingAdminUser = ref(null)
 
 // Pagination state
 const pageProducts = ref(1)
@@ -98,6 +106,8 @@ const articleForm = ref({ title: '', slug: '', content: '', image: '', isPublish
 const settingsForm = ref({})
 const credentialsForm = ref({ currentPassword: '', newUsername: '', newPassword: '', confirmPassword: '' })
 const credentialsError = ref('')
+const adminUserForm = ref({ username: '', password: '', name: '', email: '', role: 'ADMIN', permissions: [] })
+const adminUserError = ref('')
 
 // Tabs config
 const tabs = computed(() => [
@@ -108,8 +118,21 @@ const tabs = computed(() => [
   { id: 'discounts', icon: '🏷️', label: 'Diskon', count: discounts.value.length },
   { id: 'flashsales', icon: '⚡', label: 'Flash Sale', count: flashSales.value.length },
   { id: 'testimonials', icon: '💬', label: 'Testimoni', count: testimonials.value.length },
-  { id: 'articles', icon: '📰', label: 'Artikel', count: articles.value.length }
-])
+  { id: 'articles', icon: '📰', label: 'Artikel', count: articles.value.length },
+  { id: 'adminusers', icon: '👥', label: 'Admin Users', count: adminUsers.value.length }
+].filter(tab => {
+  // Filter tabs based on permissions
+  if (tab.id === 'adminusers') return hasPermission('admin_users')
+  if (tab.id === 'orders') return hasPermission('orders')
+  if (tab.id === 'products') return hasPermission('products')
+  if (tab.id === 'categories') return hasPermission('categories')
+  if (tab.id === 'payments') return hasPermission('payments')
+  if (tab.id === 'discounts') return hasPermission('discounts')
+  if (tab.id === 'flashsales') return hasPermission('flashsales')
+  if (tab.id === 'testimonials') return hasPermission('testimonials')
+  if (tab.id === 'articles') return hasPermission('articles')
+  return true
+}))
 
 // Check auth and fetch data
 onMounted(async () => {
@@ -140,14 +163,27 @@ const fetchData = async () => {
     orderAnalytics.value = analyticsRes.data
     settings.value = settRes.data
     settingsForm.value = { ...settRes.data }
+    
   } catch (error) {
     console.error('Error fetching data:', error)
   } finally {
     loading.value = false
   }
+  
+  // Fetch admin users AFTER main data to avoid blocking on error
+  try {
+    if (hasPermission('admin_users')) {
+      const usersRes = await getAdminUsers()
+      adminUsers.value = usersRes.data
+    }
+  } catch (error) {
+    console.error('Error fetching admin users:', error)
+    // Don't fail the whole dashboard if admin users fetch fails
+  }
 }
 
 const logout = () => {
+  clearPermissions()
   localStorage.removeItem('adminToken')
   localStorage.removeItem('adminName')
   router.push('/admin/login')
@@ -498,6 +534,70 @@ const confirmDeleteOrder = async (order) => {
     }
   }
 }
+
+// ========== ADMIN USER FUNCTIONS ==========
+const openAddAdminUser = () => {
+  editingAdminUser.value = null
+  adminUserForm.value = { username: '', password: '', name: '', email: '', role: 'ADMIN', permissions: [] }
+  adminUserError.value = ''
+  showAdminUserModal.value = true
+}
+
+const openEditAdminUser = (user) => {
+  editingAdminUser.value = user
+  adminUserForm.value = { 
+    username: user.username, 
+    password: '', 
+    name: user.name, 
+    email: user.email || '', 
+    role: user.role, 
+    permissions: user.permissions || [] 
+  }
+  adminUserError.value = ''
+  showAdminUserModal.value = true
+}
+
+const saveAdminUser = async (formData) => {
+  adminUserError.value = ''
+  try {
+    if (editingAdminUser.value) {
+      // Don't send password if empty
+      const updateData = { ...formData }
+      if (!updateData.password) {
+        delete updateData.password
+      }
+      await updateAdminUser(editingAdminUser.value.id, updateData)
+    } else {
+      await createAdminUser(formData)
+    }
+    showAdminUserModal.value = false
+    fetchData()
+  } catch (error) {
+    adminUserError.value = error.response?.data?.error || 'Gagal menyimpan admin user'
+  }
+}
+
+const confirmDeleteAdminUser = async (user) => {
+  if (confirm(`Nonaktifkan admin "${user.username}"?`)) {
+    try {
+      await deleteAdminUser(user.id)
+      fetchData()
+    } catch (error) {
+      alert('Gagal menonaktifkan admin user')
+    }
+  }
+}
+
+const confirmRestoreAdminUser = async (user) => {
+  if (confirm(`Aktivkan kembali admin "${user.username}"?`)) {
+    try {
+      await restoreAdminUser(user.id)
+      fetchData()
+    } catch (error) {
+      alert('Gagal mengaktifkan admin user')
+    }
+  }
+}
 </script>
 
 <template>
@@ -613,6 +713,16 @@ const confirmDeleteOrder = async (order) => {
           @edit="openEditArticle"
           @delete="confirmDeleteArticle"
         />
+
+        <!-- Admin Users Tab -->
+        <AdminUsersTab 
+          v-if="activeTab === 'adminusers'"
+          :users="adminUsers"
+          @add="openAddAdminUser"
+          @edit="openEditAdminUser"
+          @delete="confirmDeleteAdminUser"
+          @restore="confirmRestoreAdminUser"
+        />
       </main>
     </template>
 
@@ -689,6 +799,17 @@ const confirmDeleteOrder = async (order) => {
       v-if="showOrderDetailModal && selectedOrder"
       :order="selectedOrder"
       @close="showOrderDetailModal = false"
+    />
+
+    <AdminUserModal 
+      v-if="showAdminUserModal"
+      :show="showAdminUserModal"
+      v-model="adminUserForm"
+      :editing="!!editingAdminUser"
+      :loading="false"
+      :error="adminUserError"
+      @close="showAdminUserModal = false"
+      @submit="saveAdminUser"
     />
   </div>
 </template>

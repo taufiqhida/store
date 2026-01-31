@@ -2,8 +2,11 @@
 import { ref } from 'vue'
 import { adminLogin } from '../services/api'
 import { useRouter } from 'vue-router'
+import { usePermissions } from '../composables/usePermissions'
 
 const router = useRouter()
+const { setPermissions } = usePermissions()
+
 const username = ref('')
 const password = ref('')
 const error = ref('')
@@ -26,9 +29,13 @@ const login = async () => {
 
     localStorage.setItem('adminToken', res.data.token)
     localStorage.setItem('adminName', res.data.admin.name || res.data.admin.username)
+    
+    // Save permissions dan role
+    setPermissions(res.data.admin.permissions || [], res.data.admin.role || 'ADMIN')
+    
     router.push('/admin/dashboard')
   } catch (err) {
-    error.value = 'Username atau password salah'
+    error.value = err.response?.data?.error || 'Username atau password salah'
   } finally {
     loading.value = false
   }

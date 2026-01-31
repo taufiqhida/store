@@ -88,11 +88,18 @@ export const createArticle = (data) => api.post('/admin/articles', data);
 export const updateArticle = (id, data) => api.put(`/admin/articles/${id}`, data);
 export const deleteArticle = (id) => api.delete(`/admin/articles/${id}`);
 
-// ==================== ADMIN ORDER APIs ====================
+// ==================== ADMIN USER APIs ====================
+export const getAdminUsers = (includeDeleted = false) => api.get('/admin/users', { params: { includeDeleted } });
+export const getCurrentAdmin = () => api.get('/admin/me');
+export const createAdminUser = (data) => api.post('/admin/users', data);
+export const updateAdminUser = (id, data) => api.put(`/admin/users/${id}`, data);
+export const deleteAdminUser = (id) => api.delete(`/admin/users/${id}`);
+export const restoreAdminUser = (id) => api.post(`/admin/users/${id}/restore`);
+
+// ====================ADMIN ORDER APIs ====================
 export const getAdminOrders = () => api.get('/admin/orders');
 export const getOrderAnalytics = () => api.get('/admin/orders/analytics/summary');
 export const updateOrderStatus = (id, status) => api.put(`/admin/orders/${id}`, { status });
 export const deleteOrder = (id) => api.delete(`/admin/orders/${id}`);
 
 export default api;
-

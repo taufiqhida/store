@@ -7,12 +7,16 @@
     <div class="header-right">
       <button class="btn btn-outline" @click="$emit('openCredentials')">🔐 Ubah Password</button>
       <button class="btn btn-secondary" @click="$emit('openSettings')">⚙️ Settings</button>
-      <button class="btn btn-danger" @click="$emit('logout')">Logout</button>
+      <button class="btn btn-danger" @click="handleLogout">Logout</button>
     </div>
   </header>
 </template>
 
 <script setup>
+import { usePermissions } from '../../composables/usePermissions'
+
+const { clearPermissions } = usePermissions()
+
 defineProps({
   adminName: {
     type: String,
@@ -20,7 +24,12 @@ defineProps({
   }
 })
 
-defineEmits(['openCredentials', 'openSettings', 'logout'])
+const emit = defineEmits(['openCredentials', 'openSettings', 'logout'])
+
+const handleLogout = () => {
+  clearPermissions()
+  emit('logout')
+}
 </script>
 
 <style scoped>
