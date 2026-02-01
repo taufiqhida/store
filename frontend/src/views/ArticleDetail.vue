@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getArticle } from '../services/api'
+import DOMPurify from 'dompurify'
 
 const router = useRouter()
 const route = useRoute()
@@ -37,6 +38,13 @@ const formatDate = (date) => {
     year: 'numeric'
   })
 }
+
+// ✅ SECURITY: Sanitize HTML content to prevent XSS attacks
+const sanitizedContent = computed(() => {
+  if (!article.value) return ''
+  const contentWithBreaks = article.value.content.replace(/\n/g, '<br>')
+  return DOMPurify.sanitize(contentWithBreaks)
+})
 
 onMounted(fetchArticle)
 </script>
@@ -79,7 +87,7 @@ onMounted(fetchArticle)
             <span class="date">📅 {{ formatDate(article.createdAt) }}</span>
           </div>
 
-          <div class="article-content" v-html="article.content.replace(/\n/g, '<br>')"></div>
+          <div class="article-content" v-html="sanitizedContent"></div>
 
           <div class="article-footer">
             <button @click="goBack" class="btn-secondary">← Artikel Lainnya</button>
