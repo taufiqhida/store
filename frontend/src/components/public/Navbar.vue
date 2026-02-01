@@ -5,7 +5,6 @@
       <div class="nav-links">
         <router-link to="/artikel" class="nav-link">📰 Artikel</router-link>
         <CartIcon />
-        <router-link to="/admin/login" class="nav-link admin-link">Admin</router-link>
         <ThemeToggle />
       </div>
     </div>
@@ -70,14 +69,5 @@ defineProps({
 
 .nav-link:hover {
   background: var(--bg-secondary);
-}
-
-.admin-link {
-  font-size: 0.85rem;
-  opacity: 0.7;
-}
-
-.admin-link:hover {
-  opacity: 1;
 }
 </style>
