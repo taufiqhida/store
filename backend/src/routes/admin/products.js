@@ -45,6 +45,32 @@ router.post('/', authMiddleware, async (req, res) => {
         conn = await pool.getConnection();
         const { name, slug, description, image, badge, categoryId, variants, isActive } = req.body;
 
+        // ✅ VALIDATION: Required fields
+        if (!name || !slug) {
+            return res.status(400).json({ error: 'Nama dan slug produk wajib diisi' });
+        }
+
+        // ✅ VALIDATION: Validate variants
+        if (!variants || variants.length === 0) {
+            return res.status(400).json({ error: 'Produk harus memiliki minimal 1 varian' });
+        }
+
+        for (const v of variants) {
+            if (!v.name) {
+                return res.status(400).json({ error: 'Nama varian wajib diisi' });
+            }
+            // ✅ VALIDATION: Price cannot be negative
+            if (v.price < 0) {
+                return res.status(400).json({ error: `Harga varian "${v.name}" tidak boleh negatif` });
+            }
+            if (v.originalPrice && v.originalPrice < 0) {
+                return res.status(400).json({ error: `Harga asli varian "${v.name}" tidak boleh negatif` });
+            }
+            if (isNaN(v.price)) {
+                return res.status(400).json({ error: `Harga varian "${v.name}" harus berupa angka` });
+            }
+        }
+
         const result = await conn.query(
             `INSERT INTO Product (name, slug, description, image, badge, categoryId, isActive, createdAt) 
        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -77,6 +103,30 @@ router.put('/:id', authMiddleware, async (req, res) => {
         conn = await pool.getConnection();
         const { id } = req.params;
         const { name, slug, description, image, badge, categoryId, variants, isActive } = req.body;
+
+        // ✅ VALIDATION: Required fields
+        if (!name || !slug) {
+            return res.status(400).json({ error: 'Nama dan slug produk wajib diisi' });
+        }
+
+        // ✅ VALIDATION: Validate variants
+        if (variants && variants.length > 0) {
+            for (const v of variants) {
+                if (!v.name) {
+                    return res.status(400).json({ error: 'Nama varian wajib diisi' });
+                }
+                // ✅ VALIDATION: Price cannot be negative
+                if (v.price < 0) {
+                    return res.status(400).json({ error: `Harga varian "${v.name}" tidak boleh negatif` });
+                }
+                if (v.originalPrice && v.originalPrice < 0) {
+                    return res.status(400).json({ error: `Harga asli varian "${v.name}" tidak boleh negatif` });
+                }
+                if (isNaN(v.price)) {
+                    return res.status(400).json({ error: `Harga varian "${v.name}" harus berupa angka` });
+                }
+            }
+        }
 
         await conn.query(
             `UPDATE Product SET name = ?, slug = ?, description = ?, image = ?, badge = ?, categoryId = ?, isActive = ? 

@@ -19,6 +19,26 @@ router.post('/', async (req, res) => {
         conn = await pool.getConnection();
         const { productName, variantName, quantity, price, paymentMethod, paymentFee, paymentAccountInfo, discountCode, discountAmount, buyerMessage } = req.body;
 
+        // ✅ VALIDATION: Basic fields
+        if (!productName || !variantName || !quantity || !price || !paymentMethod) {
+            return res.status(400).json({ error: 'Data pesanan tidak lengkap' });
+        }
+
+        // ✅ VALIDATION: Quantity must be positive number
+        if (isNaN(quantity) || Number(quantity) <= 0) {
+            return res.status(400).json({ error: 'Jumlah pesanan harus angka dan lebih dari 0' });
+        }
+
+        // ✅ VALIDATION: Price must be positive number
+        if (isNaN(price) || Number(price) < 0) {
+            return res.status(400).json({ error: 'Harga produk tidak valid' });
+        }
+
+        // ✅ VALIDATION: Discount amount cannot be negative
+        if (discountAmount && (isNaN(discountAmount) || Number(discountAmount) < 0)) {
+            return res.status(400).json({ error: 'Nilai diskon tidak valid' });
+        }
+
         const uniqueCode = Math.floor(Math.random() * 999) + 1;
         const subtotal = price * quantity;
         const totalPrice = subtotal + (paymentFee || 0) + uniqueCode - (discountAmount || 0);
@@ -81,6 +101,23 @@ router.post('/cart', async (req, res) => {
 
         if (!items || items.length === 0) {
             return res.status(400).json({ error: 'Keranjang kosong' });
+        }
+
+        // ✅ VALIDATION: Validate all items in cart
+        for (const item of items) {
+            if (!item.productName || !item.variantName || !item.quantity || !item.price) {
+                return res.status(400).json({ error: 'Data item di keranjang tidak lengkap' });
+            }
+
+            // check quantity
+            if (isNaN(item.quantity) || Number(item.quantity) <= 0) {
+                return res.status(400).json({ error: `Jumlah untuk ${item.productName} harus lebih dari 0` });
+            }
+
+            // check price
+            if (isNaN(item.price) || Number(item.price) < 0) {
+                return res.status(400).json({ error: `Harga untuk ${item.productName} tidak valid` });
+            }
         }
 
         // Get settings for WhatsApp

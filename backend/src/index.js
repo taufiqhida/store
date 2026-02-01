@@ -164,6 +164,31 @@ app.post('/api/admin/discounts', authMiddleware, async (req, res) => {
     conn = await pool.getConnection();
     const { code, name, type, value, maxDiscount, minPurchase, applyTo, productIds, usageLimit, expiresAt, isActive } = req.body;
 
+    // ✅ VALIDATION: Required fields
+    if (!code || !name) {
+      return res.status(400).json({ error: 'Kode dan nama diskon wajib diisi' });
+    }
+
+    // ✅ VALIDATION: Value cannot be negative
+    if (value < 0) {
+      return res.status(400).json({ error: 'Nilai diskon tidak boleh negatif' });
+    }
+
+    // ✅ VALIDATION: Percentage discount cannot exceed 100%
+    if (type === 'percentage' && value > 100) {
+      return res.status(400).json({ error: 'Diskon persentase tidak boleh lebih dari 100%' });
+    }
+
+    // ✅ VALIDATION: maxDiscount cannot be negative
+    if (maxDiscount && maxDiscount < 0) {
+      return res.status(400).json({ error: 'Maksimal diskon tidak boleh negatif' });
+    }
+
+    // ✅ VALIDATION: minPurchase cannot be negative
+    if (minPurchase && minPurchase < 0) {
+      return res.status(400).json({ error: 'Minimal pembelian tidak boleh negatif' });
+    }
+
     const result = await conn.query(
       `INSERT INTO Discount (code, name, type, value, maxDiscount, minPurchase, applyTo, productIds, usageLimit, expiresAt, isActive, createdAt) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -188,6 +213,31 @@ app.put('/api/admin/discounts/:id', authMiddleware, async (req, res) => {
     conn = await pool.getConnection();
     const { id } = req.params;
     const { code, name, type, value, maxDiscount, minPurchase, applyTo, productIds, usageLimit, expiresAt, isActive } = req.body;
+
+    // ✅ VALIDATION: Required fields
+    if (!code || !name) {
+      return res.status(400).json({ error: 'Kode dan nama diskon wajib diisi' });
+    }
+
+    // ✅ VALIDATION: Value cannot be negative
+    if (value < 0) {
+      return res.status(400).json({ error: 'Nilai diskon tidak boleh negatif' });
+    }
+
+    // ✅ VALIDATION: Percentage discount cannot exceed 100%
+    if (type === 'percentage' && value > 100) {
+      return res.status(400).json({ error: 'Diskon persentase tidak boleh lebih dari 100%' });
+    }
+
+    // ✅ VALIDATION: maxDiscount cannot be negative
+    if (maxDiscount && maxDiscount < 0) {
+      return res.status(400).json({ error: 'Maksimal diskon tidak boleh negatif' });
+    }
+
+    // ✅ VALIDATION: minPurchase cannot be negative
+    if (minPurchase && minPurchase < 0) {
+      return res.status(400).json({ error: 'Minimal pembelian tidak boleh negatif' });
+    }
 
     await conn.query(
       `UPDATE Discount SET code = ?, name = ?, type = ?, value = ?, maxDiscount = ?, minPurchase = ?, 
