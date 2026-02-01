@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 require('dotenv').config();
 
@@ -51,6 +52,41 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// ✅ SECURITY: Rate Limiting Configuration
+// Global rate limiter for all API requests
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Max 100 requests per windowMs per IP
+  message: { error: 'Terlalu banyak request. Coba lagi dalam 15 menit.' },
+  standardHeaders: true, // Return rate limit info in headers
+  legacyHeaders: false,
+});
+
+// Strict limiter for login attempts (prevent brute force)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Max 5 login attempts per 15 minutes
+  message: { error: 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.' },
+  skipSuccessfulRequests: true, // Don't count successful logins
+});
+
+// Order creation limiter (prevent spam orders)
+const orderLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Max 10 orders per hour per IP
+  message: { error: 'Terlalu banyak pesanan. Coba lagi dalam 1 jam.' },
+});
+
+// Testimonial limiter (prevent spam testimonials)
+const testimonialLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 3, // Max 3 testimonials per day per IP
+  message: { error: 'Batas pengiriman testimoni tercapai. Coba lagi besok.' },
+});
+
+// Apply global rate limiter to all API routes
+app.use('/api/', globalLimiter);
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -60,12 +96,14 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/payment-methods', paymentRoutes);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/flash-sales', flashSaleRoutes);
-app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/testimonials', testimonialLimiter, testimonialRoutes); // ✅ Rate limited
 app.use('/api/articles', articleRoutes);
-app.use('/api/orders', orderRoutes);
+app.use('/api/orders', orderLimiter, orderRoutes); // ✅ Rate limited
 app.use('/api/settings', settingsRoutes);
 
 // ==================== AUTH ROUTES ====================
+// Apply stricter rate limit to login endpoint
+app.use('/api/admin/login', loginLimiter);
 app.use('/api/admin', authRoutes);
 
 // ==================== ADMIN ROUTES ====================
