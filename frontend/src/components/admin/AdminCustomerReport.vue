@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 const props = defineProps({
@@ -33,18 +33,14 @@ const formatDate = (dateString) => {
 }
 
 const searchOrders = async () => {
-  if (!phone.value) {
-    error.value = 'Mohon isi nomor HP'
-    return
-  }
-
   loading.value = true
   error.value = ''
   orders.value = []
 
   try {
     const token = localStorage.getItem('adminToken')
-    const params = { phone: phone.value }
+    const params = {}
+    if (phone.value) params.phone = phone.value
     if (startDate.value) params.startDate = startDate.value
     if (endDate.value) params.endDate = endDate.value
 
@@ -63,6 +59,11 @@ const searchOrders = async () => {
   }
 }
 
+// Auto-load all orders on mount
+onMounted(() => {
+  searchOrders()
+})
+
 const printReport = () => {
     window.print()
 }
@@ -78,7 +79,7 @@ const calculateTotal = () => {
       <h2>Laporan Pembelian Pelanggan</h2>
       <div class="filters">
         <div class="form-group">
-          <label>Nomor HP</label>
+          <label>Nomor HP (opsional)</label>
           <input v-model="phone" type="text" placeholder="Contoh: 08123456789" @keyup.enter="searchOrders">
         </div>
         <div class="form-group">

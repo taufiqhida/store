@@ -240,6 +240,12 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
     margin-right: 10px;
 }
 
+.order-phone {
+    font-size: 0.85rem;
+    color: #666;
+    margin-right: 10px;
+}
+
 .order-date {
     color: #888;
     font-size: 0.9rem;

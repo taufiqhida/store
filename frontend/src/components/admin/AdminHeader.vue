@@ -12,7 +12,7 @@
   </header>
 </template>
 
-<script set up>
+<script setup>
 import { usePermissions } from '../../composables/usePermissions'
 
 const { clearPermissions } = usePermissions()

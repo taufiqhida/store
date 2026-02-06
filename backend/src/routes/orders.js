@@ -197,7 +197,7 @@ router.get('/history', async (req, res) => {
         conn = await pool.getConnection();
         const { phone } = req.query;
 
-        // ✅ VALIDATION: Phone required
+        // ✅ VALIDATION: Phone required for privacy
         if (!phone) {
             return res.status(400).json({ error: 'Nomor HP wajib diisi' });
         }
