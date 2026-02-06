@@ -5,7 +5,6 @@
     <div class="container main-content-padding">
       <div class="search-section">
         <h1 class="page-title">📜 Cek Riwayat Pesanan</h1>
-        <p class="page-subtitle">Masukkan nomor HP Anda untuk melihat status pesanan</p>
         
         <div class="search-box">
             <input 
@@ -18,9 +17,13 @@
                 {{ loading ? 'Mencari...' : '🔍 Cari' }}
             </button>
         </div>
+        
+        <p class="page-subtitle">Masukkan nomor HP Anda untuk melihat status pesanan</p>
 
         <p v-if="error" class="error-msg">{{ error }}</p>
       </div>
+
+
 
       <div class="results-section" v-if="searched">
         <div v-if="orders.length === 0" class="no-results">
@@ -119,14 +122,14 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 }
 
 .main-content-padding {
-    padding-top: 220px; /* Safe space for desktop */
+    padding-top: 250px; /* Increased aggressively */
     padding-bottom: 80px;
     flex: 1;
 }
 
 @media (max-width: 768px) {
     .main-content-padding {
-        padding-top: 240px; /* Extra space for mobile if navbar wraps */
+        padding-top: 280px; /* Extra space for mobile */
     }
 }
 
@@ -139,17 +142,20 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 .search-section {
     text-align: center;
     margin-bottom: 40px;
+    margin-top: 120px; /* MASSIVE push from navbar */
 }
 
 .page-title {
     font-size: 2rem;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
+    margin-top: 0;
     color: var(--text);
 }
 
 .page-subtitle {
     color: var(--text-secondary);
-    margin-bottom: 30px;
+    margin-top: 15px;
+    margin-bottom: 10px;
 }
 
 .search-box {

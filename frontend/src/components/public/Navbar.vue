@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar">
     <div class="container navbar-inner">
-      <a class="nav-logo" href="#">{{ storeName }}</a>
+      <router-link to="/" class="nav-logo">{{ storeName }}</router-link>
       <div class="nav-links">
         <router-link to="/artikel" class="nav-link">📰 Artikel</router-link>
         <router-link to="/cek-pesanan" class="nav-link">📦 Cek Pesanan</router-link>
