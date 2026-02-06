@@ -5,14 +5,14 @@
       <span>Selamat datang, {{ adminName }}</span>
     </div>
     <div class="header-right">
-      <button class="btn btn-outline" @click="$emit('openCredentials')">🔐 Ubah Password</button>
+      <button class="btn btn-outline" @click="$emit('openChangePassword')">🔐 Ubah Password</button>
       <button class="btn btn-secondary" @click="$emit('openSettings')">⚙️ Settings</button>
       <button class="btn btn-danger" @click="handleLogout">Logout</button>
     </div>
   </header>
 </template>
 
-<script setup>
+<script set up>
 import { usePermissions } from '../../composables/usePermissions'
 
 const { clearPermissions } = usePermissions()
@@ -24,7 +24,7 @@ defineProps({
   }
 })
 
-const emit = defineEmits(['openCredentials', 'openSettings', 'logout'])
+const emit = defineEmits(['openCredentials', 'openChangePassword', 'openSettings', 'logout'])
 
 const handleLogout = () => {
   clearPermissions()

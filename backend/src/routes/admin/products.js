@@ -81,9 +81,14 @@ router.post('/', authMiddleware, async (req, res) => {
 
         if (variants && variants.length > 0) {
             for (const v of variants) {
+                // ✅ VALIDATION: Price cannot be negative
+                if (v.price < 0) return res.status(400).json({ error: `Harga jual varian "${v.name}" tidak boleh negatif` });
+                if (v.capitalPrice < 0) return res.status(400).json({ error: `Harga modal varian "${v.name}" tidak boleh negatif` });
+                if (v.originalPrice && v.originalPrice < 0) return res.status(400).json({ error: `Harga coret varian "${v.name}" tidak boleh negatif` });
+
                 await conn.query(
-                    'INSERT INTO Variant (productId, name, price, originalPrice, isWarranty, isActive) VALUES (?, ?, ?, ?, ?, ?)',
-                    [productId, v.name, v.price, v.originalPrice, v.isWarranty || false, v.isActive !== false]
+                    'INSERT INTO Variant (productId, name, price, capitalPrice, originalPrice, isWarranty, isActive) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [productId, v.name, v.price, v.capitalPrice || 0, v.originalPrice, v.isWarranty || false, v.isActive !== false]
                 );
             }
         }
@@ -137,9 +142,13 @@ router.put('/:id', authMiddleware, async (req, res) => {
         if (variants) {
             await conn.query('DELETE FROM Variant WHERE productId = ?', [id]);
             for (const v of variants) {
+                // ✅ VALIDATION: Price cannot be negative
+                if (v.price < 0) return res.status(400).json({ error: `Harga jual varian "${v.name}" tidak boleh negatif` });
+                if (v.capitalPrice < 0) return res.status(400).json({ error: `Harga modal varian "${v.name}" tidak boleh negatif` });
+
                 await conn.query(
-                    'INSERT INTO Variant (productId, name, price, originalPrice, isWarranty, isActive) VALUES (?, ?, ?, ?, ?, ?)',
-                    [id, v.name, v.price, v.originalPrice, v.isWarranty || false, v.isActive !== false]
+                    'INSERT INTO Variant (productId, name, price, capitalPrice, originalPrice, isWarranty, isActive) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [id, v.name, v.price, v.capitalPrice || 0, v.originalPrice, v.isWarranty || false, v.isActive !== false]
                 );
             }
         }

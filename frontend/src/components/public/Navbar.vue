@@ -4,6 +4,7 @@
       <a class="nav-logo" href="#">{{ storeName }}</a>
       <div class="nav-links">
         <router-link to="/artikel" class="nav-link">📰 Artikel</router-link>
+        <router-link to="/cek-pesanan" class="nav-link">📦 Cek Pesanan</router-link>
         <CartIcon />
         <ThemeToggle />
       </div>

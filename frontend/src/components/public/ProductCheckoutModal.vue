@@ -87,6 +87,18 @@
             </p>
           </div>
           
+          <!-- Phone Number -->
+          <div class="phone-section">
+            <label>Nomor HP/WhatsApp <span class="required">*</span></label>
+            <input 
+              v-model="phoneNumber" 
+              type="tel" 
+              placeholder="Contoh: 081234567890" 
+              required
+            />
+            <p v-if="phoneError" class="phone-error">{{ phoneError }}</p>
+          </div>
+          
           <!-- Buyer Message -->
           <div class="message-section">
             <label>Pesan untuk Penjual (Opsional)</label>
@@ -132,8 +144,8 @@
             </button>
             <button 
               class="checkout-btn"
-              @click="$emit('checkout')"
-              :disabled="!selectedVariant || !selectedPayment || loading"
+              @click="handleCheckout"
+              :disabled="!selectedVariant || !selectedPayment || !phoneNumber || loading"
             >
               {{ loading ? 'Memproses...' : '📱 Pesan Langsung' }}
             </button>
@@ -161,6 +173,7 @@ const props = defineProps({
   discountLoading: Boolean,
   discountError: String,
   modelBuyerMessage: String,
+  modelPhoneNumber: String,
   subtotal: Number,
   discountAmount: Number,
   paymentFee: Number,
@@ -171,7 +184,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   'close', 'update:modelVariant', 'update:modelPayment', 'update:modelQuantity',
-  'update:modelDiscountCode', 'update:modelBuyerMessage', 'applyDiscount', 'removeDiscount', 'checkout', 'addedToCart'
+  'update:modelDiscountCode', 'update:modelBuyerMessage', 'update:modelPhoneNumber', 'applyDiscount', 'removeDiscount', 'checkout', 'addedToCart'
 ])
 
 const selectedVariant = ref(props.modelVariant)
@@ -179,12 +192,15 @@ const selectedPayment = ref(props.modelPayment)
 const quantity = ref(props.modelQuantity || 1)
 const discountCode = ref(props.modelDiscountCode || '')
 const buyerMessage = ref(props.modelBuyerMessage || '')
+const phoneNumber = ref(props.modelPhoneNumber || '')
+const phoneError = ref('')
 
 watch(() => props.modelVariant, (v) => { selectedVariant.value = v })
 watch(() => props.modelPayment, (v) => { selectedPayment.value = v })
 watch(() => props.modelQuantity, (v) => { quantity.value = v })
 watch(() => props.modelDiscountCode, (v) => { discountCode.value = v })
 watch(() => props.modelBuyerMessage, (v) => { buyerMessage.value = v })
+watch(() => props.modelPhoneNumber, (v) => { phoneNumber.value = v })
 
 const selectVariant = (v) => {
   selectedVariant.value = v
@@ -216,12 +232,36 @@ const updateQty = (e) => {
 
 watch(discountCode, (v) => emit('update:modelDiscountCode', v))
 watch(buyerMessage, (v) => emit('update:modelBuyerMessage', v))
+watch(phoneNumber, (v) => {
+  emit('update:modelPhoneNumber', v)
+  validatePhone()
+})
+
+const validatePhone = () => {
+  if (!phoneNumber.value) {
+    phoneError.value = 'Nomor HP harus diisi'
+    return false
+  }
+  const phoneRegex = /^(08|\+628|628)[0-9]{8,12}$/
+  if (!phoneRegex.test(phoneNumber.value.replace(/\s/g, ''))) {
+    phoneError.value = 'Format nomor HP tidak valid (08xxx atau +628xxx)'
+    return false
+  }
+  phoneError.value = ''
+  return true
+}
 
 const handleAddToCart = () => {
   if (props.product && selectedVariant.value) {
     addToCart(props.product, selectedVariant.value, quantity.value)
     emit('addedToCart')
     emit('close')
+  }
+}
+
+const handleCheckout = () => {
+  if (validatePhone()) {
+    emit('checkout')
   }
 }
 
@@ -420,16 +460,42 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   color: var(--text);
 }
 
-.discount-section, .message-section {
+.discount-section, .message-section, .phone-section {
   margin-bottom: 20px;
 }
 
-.discount-section label, .message-section label {
+.discount-section label, .message-section label, .phone-section label {
   display: block;
   font-weight: 600;
   margin-bottom: 8px;
   font-size: 0.9rem;
   color: var(--text);
+}
+
+.phone-section label .required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.phone-section input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+.phone-section input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.phone-error {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 5px;
 }
 
 .discount-input-group {

@@ -88,6 +88,19 @@
             <p v-if="promoError" class="promo-error">{{ promoError }}</p>
           </div>
 
+          <!-- Phone Number Section -->
+          <div class="phone-section">
+            <h4>📱 Nomor HP/WhatsApp <span class="required">*</span></h4>
+            <input 
+              v-model="phoneNumber" 
+              type="tel" 
+              placeholder="Contoh: 081234567890" 
+              class="phone-input"
+              required
+            />
+            <p v-if="phoneError" class="phone-error">{{ phoneError }}</p>
+          </div>
+
           <!-- Cart Summary -->
           <div class="cart-summary">
             <!-- Booking Code & Unique Code -->
@@ -121,9 +134,9 @@
             <button 
               class="checkout-btn" 
               @click="handleCheckout"
-              :disabled="!selectedPayment"
+              :disabled="!selectedPayment || !phoneNumber"
             >
-              {{ selectedPayment ? '📱 Checkout via WhatsApp' : 'Pilih Pembayaran Dulu' }}
+              {{ (!selectedPayment || !phoneNumber) ? 'Lengkapi Data Dulu' : '📱 Checkout via WhatsApp' }}
             </button>
             <button class="clear-btn" @click="handleClearCart">
               Kosongkan Keranjang
@@ -170,6 +183,8 @@ const appliedDiscount = ref(null)
 // Generate booking code once when cart opens
 const bookingCode = ref('')
 const uniqueCode = ref(0)
+const phoneNumber = ref('')
+const phoneError = ref('')
 
 // Generate codes when cart opens
 watch(isCartOpen, (open) => {
@@ -264,12 +279,26 @@ const handleCheckout = () => {
     alert('Pilih metode pembayaran terlebih dahulu')
     return
   }
+  
+  // Validate phone number
+  if (!phoneNumber.value) {
+    phoneError.value = 'Nomor HP harus diisi'
+    return
+  }
+  const phoneRegex = /^(08|\+628|628)[0-9]{8,12}$/
+  if (!phoneRegex.test(phoneNumber.value.replace(/\s/g, ''))) {
+    phoneError.value = 'Format nomor HP tidak valid (08xxx atau +628xxx)'
+    return
+  }
+  phoneError.value = ''
+  
   emit('checkout', {
     payment: selectedPayment.value,
     bookingCode: bookingCode.value,
     uniqueCode: uniqueCode.value,
     discountCode: appliedDiscount.value?.code || null,
-    discountAmount: discountAmount.value
+    discountAmount: discountAmount.value,
+    phone: phoneNumber.value
   })
 }
 </script>

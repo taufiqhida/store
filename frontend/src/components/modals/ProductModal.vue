@@ -57,8 +57,16 @@
           <label>Varian Produk</label>
           <div v-for="(variant, index) in form.variants" :key="index" class="variant-row">
             <input v-model="variant.name" placeholder="Nama varian" class="variant-input" />
-            <input v-model.number="variant.price" type="number" placeholder="Harga" class="variant-input" />
-            <input v-model.number="variant.originalPrice" type="number" placeholder="Harga asli" class="variant-input" />
+            <div class="price-group">
+                <input v-model.number="variant.capitalPrice" type="number" placeholder="Modal" class="variant-input" title="Harga Modal" />
+                <input v-model.number="variant.price" type="number" placeholder="Jual" class="variant-input" title="Harga Jual" />
+                <input v-model.number="variant.originalPrice" type="number" placeholder="Coret" class="variant-input" title="Harga Coret (Diskon)" />
+            </div>
+            <div class="profit-info" v-if="variant.price && variant.capitalPrice">
+                <small>Untung: <span :class="variant.price - variant.capitalPrice >= 0 ? 'text-green' : 'text-red'">
+                    Rp {{ (variant.price - variant.capitalPrice).toLocaleString('id-ID') }}
+                </span></small>
+            </div>
             <button class="btn btn-sm btn-delete" @click="removeVariant(index)">🗑️</button>
           </div>
           <button class="btn btn-sm btn-outline" @click="addVariant">+ Tambah Varian</button>
@@ -124,7 +132,7 @@ const generateSlug = () => {
 
 const addVariant = () => {
   if (!form.value.variants) form.value.variants = []
-  form.value.variants.push({ name: '', price: 0, originalPrice: 0, isWarranty: false, isActive: true })
+  form.value.variants.push({ name: '', price: 0, capitalPrice: 0, originalPrice: 0, isWarranty: false, isActive: true })
 }
 
 const removeVariant = (index) => {
@@ -325,5 +333,26 @@ const handleImageUpload = async (e) => {
 .btn-delete {
   background: #fee2e2;
   color: #dc2626;
+}
+
+.price-group {
+    display: flex;
+    gap: 5px;
+    flex: 2;
+}
+
+.profit-info {
+    font-size: 0.75rem;
+    margin-left: 5px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+.text-green { color: #059669; font-weight: bold; }
+.text-red { color: #DC2626; font-weight: bold; }
+
+.variant-row {
+    flex-wrap: wrap;
 }
 </style>

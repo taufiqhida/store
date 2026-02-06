@@ -46,6 +46,7 @@ const appliedDiscount = ref(null)
 
 // Buyer message
 const buyerMessage = ref('')
+const phoneNumber = ref('')
 
 // Flash Sale & Testimonial state
 const flashSales = ref([])
@@ -122,15 +123,29 @@ onMounted(async () => fetchData())
 
 const fetchData = async () => {
   try {
-    const [catRes, prodRes, pmRes, settingsRes, flashRes, testiRes] = await Promise.all([
-      getCategories(), getProducts(), getPaymentMethods(), getSettings(), getFlashSales(), getTestimonials()
+    const results = await Promise.allSettled([
+      getCategories(),
+      getProducts(),
+      getPaymentMethods(),
+      getSettings(),
+      getFlashSales(),
+      getTestimonials()
     ])
-    categories.value = catRes.data
-    products.value = prodRes.data
-    paymentMethods.value = pmRes.data
-    settings.value = settingsRes.data
-    flashSales.value = flashRes.data
-    testimonials.value = testiRes.data
+
+    if (results[0].status === 'fulfilled') categories.value = results[0].value.data
+    if (results[1].status === 'fulfilled') products.value = results[1].value.data
+    if (results[2].status === 'fulfilled') paymentMethods.value = results[2].value.data
+    if (results[3].status === 'fulfilled') settings.value = results[3].value.data
+    if (results[4].status === 'fulfilled') flashSales.value = results[4].value.data
+    if (results[5].status === 'fulfilled') testimonials.value = results[5].value.data
+
+    // Log errors for debugging
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        const endpoints = ['categories', 'products', 'payments', 'settings', 'flash-sales', 'testimonials']
+        console.error(`Error fetching ${endpoints[index]}:`, result.reason)
+      }
+    })
   } catch (error) {
     console.error('Error fetching data:', error)
   }
@@ -146,6 +161,7 @@ const openProductModal = (product) => {
   discountError.value = ''
   appliedDiscount.value = null
   buyerMessage.value = ''
+  phoneNumber.value = ''
   uniqueCode.value = Math.floor(Math.random() * 999) + 1
 }
 
@@ -204,7 +220,8 @@ const checkout = async () => {
       paymentAccountInfo: selectedPayment.value.accountInfo || null,
       discountCode: appliedDiscount.value?.code || null,
       discountAmount: discountAmount.value,
-      buyerMessage: buyerMessage.value || null
+      buyerMessage: buyerMessage.value || null,
+      phone: phoneNumber.value || null
     })
     // Save order info and show success modal
     orderSuccess.value = {
@@ -296,7 +313,8 @@ const handleCartCheckout = async (checkoutData) => {
       items,
       paymentMethod: payment.name,
       bookingCode,
-      uniqueCode
+      uniqueCode,
+      phone: checkoutData.phone || null
     })
     
     // Open WhatsApp with message from API
@@ -426,6 +444,7 @@ const handleCartCheckout = async (checkoutData) => {
       v-model:model-quantity="quantity"
       v-model:model-discount-code="discountCode"
       v-model:model-buyer-message="buyerMessage"
+      v-model:model-phone-number="phoneNumber"
       :applied-discount="appliedDiscount"
       :discount-loading="discountLoading"
       :discount-error="discountError"

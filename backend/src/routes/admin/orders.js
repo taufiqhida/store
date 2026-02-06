@@ -161,4 +161,42 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Get customer report (admin)
+router.get('/customer-report', authMiddleware, async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const { phone, startDate, endDate } = req.query;
+
+        if (!phone) {
+            return res.status(400).json({ error: 'Nomor HP wajib diisi' });
+        }
+
+        let query = `
+            SELECT * FROM \`Order\`
+            WHERE phone LIKE ?
+        `;
+        const params = [`%${phone}%`];
+
+        if (startDate) {
+            query += ' AND date(createdAt) >= ?';
+            params.push(startDate);
+        }
+
+        if (endDate) {
+            query += ' AND date(createdAt) <= ?';
+            params.push(endDate);
+        }
+
+        query += ' ORDER BY createdAt DESC';
+
+        const orders = await conn.query(query, params);
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
 module.exports = router;

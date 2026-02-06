@@ -17,7 +17,9 @@ async function main() {
         const hashedPassword = await bcrypt.hash('password123', 10);
 
         if (existing.length > 0) {
-            console.log('✅ Super admin already exists');
+            console.log('🔄 Updating super admin password...');
+            await conn.query('UPDATE admin_users SET password = ?, isActive = 1 WHERE username = ?', [hashedPassword, 'admin']);
+            console.log('✅ Super admin password updated to: password123');
         } else {
             await conn.query(
                 'INSERT INTO admin_users (username, password, name, email, role, permissions, isActive, deletedAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())',

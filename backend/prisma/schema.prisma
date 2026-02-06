@@ -35,6 +35,7 @@ model Variant {
   id            Int     @id @default(autoincrement())
   name          String
   price         Float
+  capitalPrice  Float   @default(0) // Harga modal
   originalPrice Float
   isWarranty    Boolean @default(false)
   isActive      Boolean @default(true)
@@ -87,6 +88,7 @@ model Order {
   uniqueCode         Int
   totalPrice         Float
   buyerMessage       String?  @db.Text
+  phone              String?  // Nomor HP pembeli untuk verifikasi
   status             String   @default("pending")
   whatsappSent       Boolean  @default(false)
   createdAt          DateTime @default(now())
@@ -150,4 +152,3 @@ model Article {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
-

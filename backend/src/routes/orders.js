@@ -17,7 +17,7 @@ router.post('/', async (req, res) => {
     let conn;
     try {
         conn = await pool.getConnection();
-        const { productName, variantName, quantity, price, paymentMethod, paymentFee, paymentAccountInfo, discountCode, discountAmount, buyerMessage } = req.body;
+        const { productName, variantName, quantity, price, paymentMethod, paymentFee, paymentAccountInfo, discountCode, discountAmount, buyerMessage, phone } = req.body;
 
         // ✅ VALIDATION: Basic fields
         if (!productName || !variantName || !quantity || !price || !paymentMethod) {
@@ -51,9 +51,9 @@ router.post('/', async (req, res) => {
 
         // Save order
         const result = await conn.query(
-            `INSERT INTO \`Order\` (orderCode, productName, variantName, quantity, price, paymentMethod, paymentFee, paymentAccountInfo, discountCode, discountAmount, uniqueCode, totalPrice, buyerMessage, status, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-            [orderCode, productName, variantName, quantity, price, paymentMethod, paymentFee || 0, paymentAccountInfo, discountCode, discountAmount || 0, uniqueCode, totalPrice, buyerMessage]
+            `INSERT INTO \`Order\` (orderCode, productName, variantName, quantity, price, paymentMethod, paymentFee, paymentAccountInfo, discountCode, discountAmount, uniqueCode, totalPrice, buyerMessage, phone, status, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+            [orderCode, productName, variantName, quantity, price, paymentMethod, paymentFee || 0, paymentAccountInfo, discountCode, discountAmount || 0, uniqueCode, totalPrice, buyerMessage, phone]
         );
 
         // Update discount usage if code was used
@@ -81,6 +81,10 @@ router.post('/', async (req, res) => {
             message += `\n\n💬 Catatan: ${buyerMessage}`;
         }
 
+        if (phone) {
+            message += `\n📞 No. HP: ${phone}`;
+        }
+
         const waNumber = settings.whatsapp_number || '6281234567890';
         const whatsappUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
 
@@ -97,7 +101,7 @@ router.post('/cart', async (req, res) => {
     let conn;
     try {
         conn = await pool.getConnection();
-        const { items, paymentMethod, bookingCode, uniqueCode } = req.body;
+        const { items, paymentMethod, bookingCode, uniqueCode, phone } = req.body;
 
         if (!items || items.length === 0) {
             return res.status(400).json({ error: 'Keranjang kosong' });
@@ -142,9 +146,9 @@ router.post('/cart', async (req, res) => {
             const itemTotal = item.price * item.quantity;
 
             await conn.query(
-                `INSERT INTO \`Order\` (orderCode, productName, variantName, quantity, price, paymentMethod, uniqueCode, totalPrice, status, createdAt)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-                [bookingCode, item.productName, item.variantName, item.quantity, item.price, paymentMethod, orderUniqueCode, itemTotal + orderUniqueCode]
+                `INSERT INTO \`Order\` (orderCode, productName, variantName, quantity, price, paymentMethod, uniqueCode, totalPrice, phone, status, createdAt)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+                [bookingCode, item.productName, item.variantName, item.quantity, item.price, paymentMethod, orderUniqueCode, itemTotal + orderUniqueCode, phone]
             );
         }
 
@@ -179,6 +183,36 @@ router.post('/cart', async (req, res) => {
             orderCount: items.length,
             whatsappUrl
         });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (conn) conn.release();
+    }
+});
+
+// Public Order History
+router.get('/history', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+        const { phone } = req.query;
+
+        // ✅ VALIDATION: Phone required
+        if (!phone) {
+            return res.status(400).json({ error: 'Nomor HP wajib diisi' });
+        }
+
+        // Fetch orders by phone (limit 50 recent)
+        const orders = await conn.query(
+            `SELECT id, orderCode, productName, variantName, quantity, price, totalPrice, status, paymentMethod, buyerMessage, createdAt 
+             FROM \`Order\` 
+             WHERE phone = ? 
+             ORDER BY createdAt DESC 
+             LIMIT 50`,
+            [phone]
+        );
+
+        res.json(orders);
     } catch (error) {
         res.status(500).json({ error: error.message });
     } finally {

@@ -27,6 +27,7 @@ import TestimonialsTab from '../components/admin/TestimonialsTab.vue'
 import ArticlesTab from '../components/admin/ArticlesTab.vue'
 import OrdersTab from '../components/admin/OrdersTab.vue'
 import AdminUsersTab from '../components/admin/AdminUsersTab.vue'
+import AdminCustomerReport from '../components/admin/AdminCustomerReport.vue'
 
 // Import Modals
 import ProductModal from '../components/modals/ProductModal.vue'
@@ -39,6 +40,7 @@ import SettingsModal from '../components/modals/SettingsModal.vue'
 import CredentialsModal from '../components/modals/CredentialsModal.vue'
 import OrderDetailModal from '../components/modals/OrderDetailModal.vue'
 import AdminUserModal from '../components/modals/AdminUserModal.vue'
+import ChangePasswordModal from '../components/admin/modals/ChangePasswordModal.vue'
 
 const router = useRouter()
 const { hasPermission, clearPermissions } = usePermissions()
@@ -72,6 +74,7 @@ const showSettingsModal = ref(false)
 const showCredentialsModal = ref(false)
 const showOrderDetailModal = ref(false)
 const showAdminUserModal = ref(false)
+const showChangePasswordModal = ref(false)
 
 // Editing state
 const editingProduct = ref(null)
@@ -119,7 +122,9 @@ const tabs = computed(() => [
   { id: 'flashsales', icon: '⚡', label: 'Flash Sale', count: flashSales.value.length },
   { id: 'testimonials', icon: '💬', label: 'Testimoni', count: testimonials.value.length },
   { id: 'articles', icon: '📰', label: 'Artikel', count: articles.value.length },
-  { id: 'adminusers', icon: '👥', label: 'Admin Users', count: adminUsers.value.length }
+
+  { id: 'adminusers', icon: '👥', label: 'Admin Users', count: adminUsers.value.length },
+  { id: 'customer_report', icon: '📄', label: 'Laporan Pelanggan', count: '' }
 ].filter(tab => {
   // Filter tabs based on permissions
   if (tab.id === 'adminusers') return hasPermission('admin_users')
@@ -131,6 +136,7 @@ const tabs = computed(() => [
   if (tab.id === 'flashsales') return hasPermission('flashsales')
   if (tab.id === 'testimonials') return hasPermission('testimonials')
   if (tab.id === 'articles') return hasPermission('articles')
+  if (tab.id === 'customer_report') return hasPermission('orders')
   return true
 }))
 
@@ -606,6 +612,7 @@ const confirmRestoreAdminUser = async (user) => {
     <AdminHeader 
       :admin-name="adminName"
       @open-credentials="openCredentials"
+      @open-change-password="showChangePasswordModal = true"
       @open-settings="openSettings"
       @logout="logout"
     />
@@ -722,6 +729,11 @@ const confirmRestoreAdminUser = async (user) => {
           @edit="openEditAdminUser"
           @delete="confirmDeleteAdminUser"
           @restore="confirmRestoreAdminUser"
+        />
+
+        <!-- Customer Report Tab -->
+        <AdminCustomerReport 
+          v-if="activeTab === 'customer_report'"
         />
       </main>
     </template>
