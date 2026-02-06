@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import html2canvas from 'html2canvas'
 
 const props = defineProps({
   // No props needed for now
@@ -13,6 +14,9 @@ const orders = ref([])
 const loading = ref(false)
 const error = ref('')
 const showInvoice = ref(false)
+const adminName = ref('')
+const exportTime = ref('')
+const isExporting = ref(false)
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('id-ID', {
@@ -60,16 +64,91 @@ const searchOrders = async () => {
 }
 
 // Auto-load all orders on mount
-onMounted(() => {
+onMounted(async () => {
   searchOrders()
+  loadAdminInfo()
+  updateExportTime()  // Initialize export time immediately
 })
 
+const loadAdminInfo = () => {
+  try {
+    // Get admin info from localStorage (saved during login)
+    const adminData = localStorage.getItem('adminData')
+    if (adminData) {
+      const admin = JSON.parse(adminData)
+      adminName.value = admin.username || admin.name || 'Admin'
+    } else {
+      adminName.value = 'Admin'
+    }
+  } catch (err) {
+    adminName.value = 'Admin'
+  }
+}
+
 const printReport = () => {
+    // Update export time before print
+    updateExportTime()
     window.print()
+}
+
+const updateExportTime = () => {
+    const now = new Date()
+    exportTime.value = now.toLocaleString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    })
+}
+
+const exportToPNG = async () => {
+    if (isExporting.value) return
+    
+    isExporting.value = true
+    updateExportTime()
+    
+    try {
+        // Wait a bit for the DOM to update with export time
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        const element = document.querySelector('.report-content')
+        if (!element) {
+            alert('Tidak dapat menemukan konten untuk di-export')
+            return
+        }
+        
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        })
+        
+        const link = document.createElement('a')
+        const fileName = `invoice-${phone.value || 'all'}-${Date.now()}.png`
+        link.download = fileName
+        link.href = canvas.toDataURL('image/png')
+        link.click()
+    } catch (err) {
+        console.error('Error exporting to PNG:', err)
+        alert('Gagal export PNG')
+    } finally {
+        isExporting.value = false
+    }
 }
 
 const calculateTotal = () => {
     return orders.value.reduce((sum, order) => sum + order.totalPrice, 0)
+}
+
+// Filter only completed orders for export
+const completedOrders = () => {
+    return orders.value.filter(order => order.status === 'completed')
+}
+
+const calculateCompletedTotal = () => {
+    return completedOrders().reduce((sum, order) => sum + order.totalPrice, 0)
 }
 </script>
 
@@ -96,13 +175,17 @@ const calculateTotal = () => {
         <button v-if="orders.length > 0" @click="printReport" class="btn-print">
           🖨️ Cetak / Simpan PDF
         </button>
+        <button v-if="orders.length > 0" @click="exportToPNG" class="btn-export" :disabled="isExporting">
+          {{ isExporting ? '⏳ Exporting...' : '📸 Export PNG' }}
+        </button>
       </div>
       <div v-if="error" class="error-msg">{{ error }}</div>
     </div>
 
     <div v-if="orders.length > 0" class="report-content">
       <div class="invoice-header">
-        <h1>RIWAYAT PEMBELIAN</h1>
+        <h1>TAUFIQ STORE</h1>
+        <h2>RIWAYAT PEMBELIAN</h2>
         <div class="customer-info">
             <p><strong>Customer:</strong> {{ phone }}</p>
             <p><strong>Periode:</strong> {{ startDate ? formatDate(startDate) : 'Awal' }} - {{ endDate ? formatDate(endDate) : 'Sekarang' }}</p>
@@ -120,7 +203,7 @@ const calculateTotal = () => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in orders" :key="order.id">
+          <tr v-for="order in completedOrders()" :key="order.id">
             <td>{{ formatDate(order.createdAt) }}</td>
             <td>{{ order.orderCode }}</td>
             <td>
@@ -135,13 +218,17 @@ const calculateTotal = () => {
         <tfoot>
             <tr>
                 <td colspan="4" class="text-right"><strong>Total Pengeluaran</strong></td>
-                <td class="text-right"><strong>{{ formatPrice(calculateTotal()) }}</strong></td>
+                <td class="text-right"><strong>{{ formatPrice(calculateCompletedTotal()) }}</strong></td>
             </tr>
         </tfoot>
       </table>
       
       <div class="invoice-footer">
         <p>Terima kasih telah berbelanja di Taufiq Store</p>
+        <div v-if="exportTime" class="export-info">
+          <p><strong>Dicetak oleh:</strong> {{ adminName }}</p>
+          <p><strong>Waktu export:</strong> {{ exportTime }}</p>
+        </div>
       </div>
     </div>
   </div>
@@ -180,7 +267,7 @@ input {
   border-radius: 6px;
 }
 
-.btn-search, .btn-print {
+.btn-search, .btn-print, .btn-export {
   padding: 8px 20px;
   border-radius: 6px;
   border: none;
@@ -198,6 +285,16 @@ input {
   background: #10B981;
   color: white;
   margin-left: auto;
+}
+
+.btn-export {
+  background: #8B5CF6;
+  color: white;
+}
+
+.btn-export:disabled {
+  background: #C4B5FD;
+  cursor: not-allowed;
 }
 
 .error-msg {
@@ -223,9 +320,17 @@ input {
 }
 
 .invoice-header h1 {
-  font-size: 24px;
+  font-size: 28px;
   color: #333;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.invoice-header h2 {
+  font-size: 18px;
+  color: #666;
   margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .customer-info {
@@ -271,6 +376,19 @@ input {
     margin-top: 40px;
     color: #666;
     font-size: 0.9rem;
+}
+
+.export-info {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    font-size: 0.85rem;
+    color: #333 !important;
+}
+
+.export-info p {
+    margin: 5px 0;
+    color: #333 !important;
 }
 
 @media print {
