@@ -1,14 +1,27 @@
 const mariadb = require('mariadb');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
 async function main() {
     console.log('🌱 Seeding database with raw SQL...');
 
+    // Parse DATABASE_URL from .env
+    // Format: mysql://user:password@host:port/database
+    const dbUrl = process.env.DATABASE_URL || 'mysql://root:@localhost:3306/taufiq_store_1';
+    const urlMatch = dbUrl.match(/mysql:\/\/([^:]+):([^@]*)@([^:]+):(\d+)\/(.+)/);
+
+    if (!urlMatch) {
+        throw new Error('Invalid DATABASE_URL format');
+    }
+
+    const [, user, password, host, port, database] = urlMatch;
+
     const conn = await mariadb.createConnection({
-        host: 'localhost',
-        user: 'root',
-        password: '',
-        database: 'taufiq_store_1',
+        host,
+        user,
+        password,
+        database,
+        port: parseInt(port),
         multipleStatements: true
     });
 
@@ -16,19 +29,19 @@ async function main() {
         // Clear existing data
         console.log('Clearing existing data...');
         await conn.query('SET FOREIGN_KEY_CHECKS = 0');
-        await conn.query('TRUNCATE TABLE `Order`');
-        await conn.query('TRUNCATE TABLE `Variant`');
-        await conn.query('TRUNCATE TABLE `Product`');
-        await conn.query('TRUNCATE TABLE `Category`');
-        await conn.query('TRUNCATE TABLE `PaymentMethod`');
-        await conn.query('TRUNCATE TABLE `StoreSettings`');
+        await conn.query('TRUNCATE TABLE `order`');
+        await conn.query('TRUNCATE TABLE `variant`');
+        await conn.query('TRUNCATE TABLE `product`');
+        await conn.query('TRUNCATE TABLE `category`');
+        await conn.query('TRUNCATE TABLE `paymentmethod`');
+        await conn.query('TRUNCATE TABLE `storesettings`');
         await conn.query('TRUNCATE TABLE `admin_users`');
         await conn.query('SET FOREIGN_KEY_CHECKS = 1');
         console.log('✅ Tables cleared');
 
         // Create categories
         await conn.query(`
-            INSERT INTO Category (name, slug) VALUES 
+            INSERT INTO category (name, slug) VALUES 
             ('Hiburan', 'hiburan'),
             ('Lisensi', 'lisensi'),
             ('Edukasi', 'edukasi'),
@@ -37,7 +50,7 @@ async function main() {
         console.log('✅ Categories created');
 
         // Get category IDs
-        const categories = await conn.query('SELECT id, slug FROM Category');
+        const categories = await conn.query('SELECT id, slug FROM category');
         const catMap = {};
         categories.forEach(c => catMap[c.slug] = c.id);
 
@@ -55,14 +68,14 @@ async function main() {
 
         for (const p of products) {
             await conn.query(
-                'INSERT INTO Product (name, slug, description, image, badge, categoryId, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+                'INSERT INTO product (name, slug, description, image, badge, categoryId, createdAt) VALUES (?, ?, ?, ?, ?, ?, NOW())',
                 [p.name, p.slug, p.description, p.image, p.badge, p.categoryId]
             );
         }
         console.log('✅ Products created');
 
         // Get product IDs
-        const productRows = await conn.query('SELECT id, slug FROM Product');
+        const productRows = await conn.query('SELECT id, slug FROM product');
         const prodMap = {};
         productRows.forEach(p => prodMap[p.slug] = p.id);
 
@@ -96,7 +109,7 @@ async function main() {
 
         for (const v of variants) {
             await conn.query(
-                'INSERT INTO Variant (productId, name, price, originalPrice, isWarranty) VALUES (?, ?, ?, ?, ?)',
+                'INSERT INTO variant (productId, name, price, originalPrice, isWarranty) VALUES (?, ?, ?, ?, ?)',
                 [v.productId, v.name, v.price, v.originalPrice, v.isWarranty]
             );
         }
@@ -114,8 +127,8 @@ async function main() {
 
         for (const pm of paymentMethods) {
             await conn.query(
-                'INSERT INTO PaymentMethod (name, icon, type, isActive) VALUES (?, ?, ?, 1)',
-                [pm.name, pm.icon, pm.type]
+                'INSERT INTO paymentmethod (name, icon, iconType, isActive) VALUES (?, ?, ?, 1)',
+                [pm.name, pm.icon, 'emoji']
             );
         }
         console.log('✅ Payment methods created');
@@ -143,7 +156,7 @@ Mohon diproses ya, terima kasih! 🙏`;
 
         for (const s of settings) {
             await conn.query(
-                'INSERT INTO StoreSettings (`key`, value) VALUES (?, ?)',
+                'INSERT INTO storesettings (`key`, value) VALUES (?, ?)',
                 [s.key, s.value]
             );
         }
@@ -183,7 +196,7 @@ Mohon diproses ya, terima kasih! 🙏`;
             createdAt.setDate(createdAt.getDate() - order.daysAgo);
 
             await conn.query(
-                `INSERT INTO \`Order\` (orderCode, productName, variantName, quantity, price, paymentMethod, uniqueCode, totalPrice, status, createdAt) 
+                `INSERT INTO \`order\` (orderCode, productName, variantName, quantity, price, paymentMethod, uniqueCode, totalPrice, status, createdAt) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [order.orderCode, order.productName, order.variantName, order.quantity, order.price, order.paymentMethod, uniqueCode, totalPrice, order.status, createdAt]
             );
