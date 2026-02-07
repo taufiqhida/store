@@ -22,7 +22,7 @@ async function main() {
         await conn.query('TRUNCATE TABLE `Category`');
         await conn.query('TRUNCATE TABLE `PaymentMethod`');
         await conn.query('TRUNCATE TABLE `StoreSettings`');
-        await conn.query('TRUNCATE TABLE `Admin`');
+        await conn.query('TRUNCATE TABLE `admin_users`');
         await conn.query('SET FOREIGN_KEY_CHECKS = 1');
         console.log('✅ Tables cleared');
 
@@ -149,21 +149,18 @@ Mohon diproses ya, terima kasih! 🙏`;
         }
         console.log('✅ Store settings created');
 
-        // Create admin users (2 accounts)
+        // Create super admin user
         const hashedPassword = await bcrypt.hash('admin123', 10);
-        const hashedPassword2 = await bcrypt.hash('zaidan123', 10);
 
         await conn.query(
-            'INSERT INTO Admin (username, password, name, createdAt) VALUES (?, ?, ?, NOW())',
-            ['admin', hashedPassword, 'Administrator']
+            `INSERT INTO admin_users (username, password, name, email, role, permissions, isActive, createdAt, updatedAt) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            ['admin', hashedPassword, 'Super Administrator', 'admin@taufiqstore.com', 'SUPER_ADMIN', '[]', 1]
         );
-        await conn.query(
-            'INSERT INTO Admin (username, password, name, createdAt) VALUES (?, ?, ?, NOW())',
-            ['zaidan', hashedPassword2, 'Zaidan']
-        );
-        console.log('✅ Admin users created:');
-        console.log('   - admin / admin123');
-        console.log('   - zaidan / zaidan123');
+        console.log('✅ Super Admin created:');
+        console.log('   - Username: admin');
+        console.log('   - Password: admin123');
+        console.log('   - Role: SUPER_ADMIN');
 
         // Create sample orders for analytics
         const sampleOrders = [
