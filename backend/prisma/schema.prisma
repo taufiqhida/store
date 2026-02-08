@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model AdminUser {
@@ -22,7 +23,7 @@ model AdminUser {
   @@map("admin_users")
 }
 
-model article {
+model Article {
   id          Int      @id @default(autoincrement())
   title       String
   slug        String   @unique(map: "Article_slug_key")
@@ -30,18 +31,22 @@ model article {
   image       String?
   isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime
+  updatedAt   DateTime @updatedAt
+
+  @@map("article")
 }
 
-model category {
+model Category {
   id       Int       @id @default(autoincrement())
   name     String
   slug     String    @unique(map: "Category_slug_key")
   isActive Boolean   @default(true)
-  product  product[]
+  products Product[]
+
+  @@map("category")
 }
 
-model discount {
+model Discount {
   id          Int       @id @default(autoincrement())
   code        String    @unique(map: "Discount_code_key")
   name        String
@@ -56,9 +61,11 @@ model discount {
   createdAt   DateTime  @default(now())
   usageCount  Int       @default(0)
   usageLimit  Int?
+
+  @@map("discount")
 }
 
-model flashsale {
+model FlashSale {
   id              Int      @id @default(autoincrement())
   title           String
   description     String?  @db.Text
@@ -69,9 +76,11 @@ model flashsale {
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   variantId       Int?
+
+  @@map("flashsale")
 }
 
-model order {
+model Order {
   id                 Int      @id @default(autoincrement())
   productName        String
   variantName        String
@@ -90,9 +99,11 @@ model order {
   paymentAccountInfo String?  @db.Text
   paymentFee         Float    @default(0)
   phone              String?
+
+  @@map("order")
 }
 
-model paymentmethod {
+model PaymentMethod {
   id          Int     @id @default(autoincrement())
   name        String
   icon        String?
@@ -103,9 +114,11 @@ model paymentmethod {
   fees        Float   @default(0)
   iconType    String  @default("emoji")
   qrisImage   String?
+
+  @@map("paymentmethod")
 }
 
-model product {
+model Product {
   id          Int       @id @default(autoincrement())
   name        String
   slug        String    @unique(map: "Product_slug_key")
@@ -115,19 +128,22 @@ model product {
   categoryId  Int
   createdAt   DateTime  @default(now())
   isActive    Boolean   @default(true)
-  category    category  @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
-  variant     variant[]
+  category    Category  @relation(fields: [categoryId], references: [id], map: "Product_categoryId_fkey")
+  variants    Variant[]
 
   @@index([categoryId], map: "Product_categoryId_fkey")
+  @@map("product")
 }
 
-model storesettings {
+model StoreSettings {
   id    Int    @id @default(autoincrement())
   key   String @unique(map: "StoreSettings_key_key")
   value String @db.Text
+
+  @@map("storesettings")
 }
 
-model testimonial {
+model Testimonial {
   id          Int      @id @default(autoincrement())
   orderCode   String
   name        String
@@ -136,9 +152,11 @@ model testimonial {
   productName String?
   isApproved  Boolean  @default(false)
   createdAt   DateTime @default(now())
+
+  @@map("testimonial")
 }
 
-model variant {
+model Variant {
   id            Int     @id @default(autoincrement())
   name          String
   price         Float
@@ -147,7 +165,8 @@ model variant {
   productId     Int
   isActive      Boolean @default(true)
   capitalPrice  Float   @default(0)
-  product       product @relation(fields: [productId], references: [id], map: "Variant_productId_fkey")
+  product       Product @relation(fields: [productId], references: [id], map: "Variant_productId_fkey")
 
   @@index([productId], map: "Variant_productId_fkey")
+  @@map("variant")
 }

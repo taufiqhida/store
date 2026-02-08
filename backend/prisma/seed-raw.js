@@ -76,8 +76,7 @@ async function main() {
             { productId: prodMap['netflix-premium'], name: 'Private 1 Bulan', price: 45000, originalPrice: 186000, isWarranty: true },
             { productId: prodMap['netflix-premium'], name: 'Sharing 1 Bulan', price: 20000, originalPrice: 50000, isWarranty: false },
             { productId: prodMap['spotify-premium'], name: 'Private 1 Bulan', price: 15000, originalPrice: 55000, isWarranty: true },
-            { productId: prodMap['spotify-premremium'], name: 'Family 1 Bulan', price: 25000, originalPrice: 87000, isWarranty: true }
-            // tambahkan sesuai list variantmu
+            { productId: prodMap['spotify-premium'], name: 'Family 1 Bulan', price: 25000, originalPrice: 87000, isWarranty: true }
         ];
 
         for (const v of variants) {
@@ -87,6 +86,35 @@ async function main() {
             );
         }
         console.log('✅ Variants created');
+
+        // Buat payment methods
+        const paymentMethods = [
+            { name: 'QRIS', icon: '📱' },
+            { name: 'GoPay', icon: '💚' },
+            { name: 'DANA', icon: '💙' }
+        ];
+
+        for (const pm of paymentMethods) {
+            await conn.query(
+                'INSERT INTO paymentmethod (name, icon, iconType, isActive) VALUES (?, ?, ?, 1)',
+                [pm.name, pm.icon, 'emoji']
+            );
+        }
+        console.log('✅ Payment methods created');
+
+        // Buat store settings
+        const settings = [
+            { key: 'store_name', value: 'Taufiq Store' },
+            { key: 'whatsapp_number', value: '6281234567890' }
+        ];
+
+        for (const s of settings) {
+            await conn.query(
+                'INSERT INTO storesettings (`key`, value) VALUES (?, ?)',
+                [s.key, s.value]
+            );
+        }
+        console.log('✅ Store settings created');
 
         // Buat super admin
         const hashedPassword = await bcrypt.hash('admin123', 10);
