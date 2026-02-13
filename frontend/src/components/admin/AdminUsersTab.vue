@@ -142,6 +142,7 @@ const formatDate = (dateString) => {
 .tab-header h2 {
   font-size: 1.5rem;
   font-weight: 700;
+  color: #1f2937;
 }
 
 .btn-add {

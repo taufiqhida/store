@@ -247,6 +247,13 @@ const calculateCompletedTotal = () => {
   margin-bottom: 20px;
 }
 
+.search-section h2 {
+  color: #1f2937;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
 .filters {
   display: flex;
   gap: 15px;
@@ -384,7 +391,7 @@ input {
 .invoice-footer {
     text-align: center;
     margin-top: 40px;
-    color: #666;
+    color: #1f2937;
     font-size: 0.9rem;
 }
 
