@@ -68,8 +68,9 @@ const generateSlug = () => {
 .modal-body { padding: 20px; }
 .modal-footer { padding: 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 10px; }
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; }
-.form-group input, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; color: #1f2937; }
+.form-group input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; color: #1f2937; }
+.form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; }
 .toggle-group { display: flex; gap: 8px; }
 .toggle-btn { padding: 10px 18px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; font-weight: 500; background: white; cursor: pointer; }
 .toggle-btn.active { background: #EBF5FF; border-color: #3B82F6; color: #1D4ED8; }

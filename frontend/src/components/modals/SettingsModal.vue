@@ -140,8 +140,8 @@ function handleSave() {
 .section-divider { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
 
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; }
-.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; color: #1f2937; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; color: #1f2937; }
 .form-group small { display: block; margin-top: 5px; color: #6b7280; font-size: 0.75rem; }
 
 .form-select { appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 10px center; background-repeat: no-repeat; background-size: 20px; padding-right: 40px; }

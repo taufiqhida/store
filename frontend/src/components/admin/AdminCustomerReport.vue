@@ -261,10 +261,16 @@ const calculateCompletedTotal = () => {
   gap: 5px;
 }
 
+.form-group label {
+  color: #1f2937;
+  font-weight: 500;
+}
+
 input {
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
+  color: #1f2937;
 }
 
 .btn-search, .btn-print, .btn-export {
@@ -328,7 +334,7 @@ input {
 
 .invoice-header h2 {
   font-size: 18px;
-  color: #666;
+  color: #1f2937;
   margin-bottom: 10px;
   font-weight: 600;
 }
@@ -353,7 +359,11 @@ input {
 .report-table th {
   background: #f9fafb;
   font-weight: 600;
-  color: #374151;
+  color: #1f2937;
+}
+
+.report-table td {
+  color: #1f2937;
 }
 
 .text-right {

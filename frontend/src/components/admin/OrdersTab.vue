@@ -179,7 +179,10 @@ const pendingCount = computed(() => props.orders.filter(o => o.status === 'pendi
 const confirmedCount = computed(() => props.orders.filter(o => o.status === 'confirmed' || o.status === 'processing' || o.status === 'shipped').length)
 const completedCount = computed(() => props.orders.filter(o => o.status === 'completed').length)
 
-const formatPrice = (num) => new Intl.NumberFormat('id-ID').format(num)
+const formatPrice = (num) => {
+  if (!num || isNaN(num)) return '0'
+  return new Intl.NumberFormat('id-ID').format(num)
+}
 
 const formatDate = (date) => {
   if (!date) return '-'
@@ -211,6 +214,7 @@ const truncate = (text, length) => {
 .section-header h2 {
   font-size: 1.25rem;
   font-weight: 600;
+  color: #1f2937;
 }
 
 .order-stats {

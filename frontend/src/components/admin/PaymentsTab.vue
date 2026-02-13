@@ -77,6 +77,7 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
 .section-header h2 {
   font-size: 1.25rem;
   font-weight: 600;
+  color: #1f2937;
 }
 
 .table-container {
@@ -104,7 +105,11 @@ const formatPrice = (price) => new Intl.NumberFormat('id-ID').format(price)
   font-weight: 600;
   font-size: 0.75rem;
   text-transform: uppercase;
-  color: #6b7280;
+  color: #1f2937;
+}
+
+.data-table td {
+  color: #1f2937;
 }
 
 .payment-icon-img {

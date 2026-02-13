@@ -115,8 +115,8 @@ const handleUpload = async (e) => {
 .modal-footer { padding: 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 10px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; color: #1f2937; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; color: #1f2937; }
 .image-upload-group { display: flex; gap: 10px; }
 .image-upload-group input { flex: 1; }
 .upload-btn { padding: 10px 15px; background: #f3f4f6; border-radius: 8px; cursor: pointer; font-size: 0.875rem; white-space: nowrap; }

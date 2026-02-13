@@ -69,11 +69,19 @@ const productsPerPage = 12
 const testimonialsPerPage = 6
 
 // Computed
+// Filter products by selected category
+const filteredProducts = computed(() => {
+  if (selectedCategory.value === 'all') {
+    return products.value
+  }
+  return products.value.filter(p => p.categorySlug === selectedCategory.value)
+})
+
 const paginatedProducts = computed(() => {
   const start = (pageProducts.value - 1) * productsPerPage
-  return products.value.slice(start, start + productsPerPage)
+  return filteredProducts.value.slice(start, start + productsPerPage)
 })
-const totalPagesProducts = computed(() => Math.ceil(products.value.length / productsPerPage))
+const totalPagesProducts = computed(() => Math.ceil(filteredProducts.value.length / productsPerPage))
 
 const paginatedTestimonials = computed(() => {
   const start = (pageTestimonials.value - 1) * testimonialsPerPage
@@ -275,6 +283,11 @@ const handleSubmitTestimonial = async (form) => {
 }
 
 const enterShop = () => { showHero.value = false }
+
+// Reset pagination when category changes
+watch(selectedCategory, () => {
+  pageProducts.value = 1
+})
 
 // Cart toast notification
 const showAddedToCartToast = () => {

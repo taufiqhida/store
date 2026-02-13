@@ -128,8 +128,8 @@ watch(() => props.modelValue, (newVal) => {
 .modal-footer { padding: 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 10px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; }
-.form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; color: #1f2937; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; color: #1f2937; }
 .form-group small { display: block; margin-top: 5px; color: #6b7280; font-size: 0.75rem; }
 .product-selection { display: flex; flex-wrap: wrap; gap: 8px; max-height: 200px; overflow-y: auto; padding: 10px; background: #f9fafb; border-radius: 8px; }
 .product-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: white; border: 1px solid #e5e7eb; border-radius: 20px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }

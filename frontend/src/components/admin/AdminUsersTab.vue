@@ -203,13 +203,14 @@ const formatDate = (dateString) => {
   padding: 16px;
   text-align: left;
   font-weight: 600;
-  color: #374151;
+  color: #1f2937;
   border-bottom: 2px solid #e5e7eb;
 }
 
 .admin-table td {
   padding: 16px;
   border-bottom: 1px solid #e5e7eb;
+  color: #1f2937;
 }
 
 .admin-table tbody tr:hover {

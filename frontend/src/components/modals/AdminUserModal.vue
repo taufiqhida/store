@@ -240,7 +240,7 @@ const handleSubmit = () => {
 
 .form-group label {
   font-weight: 600;
-  color: #374151;
+  color: #1f2937;
   font-size: 0.875rem;
 }
 
@@ -251,6 +251,7 @@ const handleSubmit = () => {
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.2s;
+  color: #1f2937;
 }
 
 .form-group input:focus,
@@ -275,7 +276,7 @@ const handleSubmit = () => {
 
 .permissions-header label {
   font-weight: 600;
-  color: #374151;
+  color: #1f2937;
 }
 
 .btn-select-all {
@@ -324,6 +325,7 @@ const handleSubmit = () => {
 .permission-item span {
   font-size: 0.875rem;
   font-weight: 500;
+  color: #1f2937;
 }
 
 .super-admin-note {

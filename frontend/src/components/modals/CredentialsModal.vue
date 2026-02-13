@@ -65,8 +65,8 @@ watch(() => props.modelValue, (newVal) => {
 .modal-body { padding: 20px; }
 .modal-footer { padding: 20px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 10px; }
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; }
-.form-group input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.875rem; color: #1f2937; }
+.form-group input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; color: #1f2937; }
 .form-group small { display: block; margin-top: 5px; color: #6b7280; font-size: 0.75rem; }
 .error-alert { background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.875rem; }
 .divider { margin: 20px 0; border: none; border-top: 1px solid #e5e7eb; }
