@@ -5,6 +5,31 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
+// =====================================================
+// 🛡️ PROCESS ERROR HANDLERS - Prevent Backend Crashes
+// =====================================================
+
+// Catch uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ UNCAUGHT EXCEPTION! Server tetap berjalan...');
+  console.error('Error:', error.name, error.message);
+  console.error('Stack:', error.stack);
+  // Don't exit the process - keep server running
+});
+
+// Catch unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED REJECTION! Server tetap berjalan...');
+  console.error('Promise:', promise);
+  console.error('Reason:', reason);
+  // Don't exit the process - keep server running
+});
+
+// Catch warnings
+process.on('warning', (warning) => {
+  console.warn('⚠️ Warning:', warning.name, warning.message);
+});
+
 
 // Import routes
 const productRoutes = require('./routes/products');
@@ -87,6 +112,18 @@ const testimonialLimiter = rateLimit({
 
 // Apply global rate limiter to all API routes
 app.use('/api/', globalLimiter);
+
+// ✅ Request timeout middleware (prevent hanging requests)
+app.use((req, res, next) => {
+  // Set timeout to 30 seconds
+  req.setTimeout(30000, () => {
+    console.error('⏱️ Request timeout:', req.method, req.path);
+    if (!res.headersSent) {
+      res.status(408).json({ error: 'Request timeout. Silakan coba lagi.' });
+    }
+  });
+  next();
+});
 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -403,7 +440,93 @@ app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res)
   }
 });
 
-// Start server
-app.listen(PORT, () => {
+// =====================================================
+// 🛡️ GLOBAL ERROR HANDLER - Catch all errors
+// =====================================================
+
+// 404 handler - Route not found
+app.use((req, res, next) => {
+  res.status(404).json({
+    error: 'Route tidak ditemukan',
+    path: req.path
+  });
+});
+
+// Global error handler - Catch all errors
+app.use((err, req, res, next) => {
+  console.error('❌ Global Error Handler:');
+  console.error('Error:', err.name, err.message);
+  console.error('Stack:', err.stack);
+  console.error('Path:', req.method, req.path);
+  console.error('Body:', req.body);
+
+  // Don't expose internal errors to client in production
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+
+  // Handle specific error types
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({ error: 'Token tidak valid' });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({ error: 'Token sudah kadaluarsa' });
+  }
+
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Format JSON tidak valid' });
+  }
+
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'Ukuran file terlalu besar' });
+  }
+
+  // Database errors
+  if (err.code && err.code.startsWith('ER_')) {
+    return res.status(500).json({
+      error: 'Database error',
+      message: isDevelopment ? err.message : 'Terjadi kesalahan pada database'
+    });
+  }
+
+  // Generic error response
+  res.status(err.status || 500).json({
+    error: isDevelopment ? err.message : 'Terjadi kesalahan pada server',
+    ...(isDevelopment && { stack: err.stack })
+  });
+});
+
+// =====================================================
+// 🚀 START SERVER
+// =====================================================
+
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🛡️ Error handling: ACTIVE`);
+  console.log(`⏱️ Request timeout: 30 seconds`);
+  console.log(`🔒 Rate limiting: ACTIVE`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} sudah digunakan. Gunakan port lain.`);
+  }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('⚠️ SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('\n⚠️ SIGINT received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
 });
