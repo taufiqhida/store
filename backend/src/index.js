@@ -106,6 +106,47 @@ const orderLimiter = rateLimit({
 // Apply global rate limiter to all API routes
 app.use('/api/', globalLimiter);
 
+// ✅ Memory monitoring (production only)
+if (process.env.NODE_ENV === 'production') {
+  setInterval(() => {
+    const used = process.memoryUsage();
+    const heapUsedMB = Math.round(used.heapUsed / 1024 / 1024);
+    const heapTotalMB = Math.round(used.heapTotal / 1024 / 1024);
+
+    if (heapUsedMB > 400) {
+      console.warn(`⚠️ High memory usage: ${heapUsedMB}MB / ${heapTotalMB}MB`);
+    }
+  }, 60000); // Check every minute
+}
+
+// ✅ Concurrent request limiter per IP (prevent request flooding)
+const activeConcurrentRequests = new Map();
+const MAX_CONCURRENT_PER_IP = 10;
+
+app.use((req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const count = activeConcurrentRequests.get(ip) || 0;
+
+  if (count >= MAX_CONCURRENT_PER_IP) {
+    return res.status(429).json({
+      error: 'Terlalu banyak request bersamaan. Tunggu sebentar.'
+    });
+  }
+
+  activeConcurrentRequests.set(ip, count + 1);
+
+  res.on('finish', () => {
+    const current = activeConcurrentRequests.get(ip) || 0;
+    if (current <= 1) {
+      activeConcurrentRequests.delete(ip);
+    } else {
+      activeConcurrentRequests.set(ip, current - 1);
+    }
+  });
+
+  next();
+});
+
 // ✅ Request timeout middleware (prevent hanging requests)
 app.use((req, res, next) => {
   // Set timeout to 30 seconds
