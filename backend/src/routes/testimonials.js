@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
+const rateLimit = require('express-rate-limit');
+
+// ✅ Rate limiter only for testimonial submission (POST)
+const testimonialSubmitLimiter = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 3, // Max 3 testimonial submissions per day per IP
+    message: { error: 'Batas pengiriman testimoni tercapai. Coba lagi besok.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Get approved testimonials (public)
 router.get('/', async (req, res) => {
@@ -19,8 +29,8 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Submit testimonial (public)
-router.post('/', async (req, res) => {
+// Submit testimonial (public) - Rate limited to 3 per day
+router.post('/', testimonialSubmitLimiter, async (req, res) => {
     let conn;
     try {
         conn = await pool.getConnection();

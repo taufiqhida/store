@@ -103,13 +103,6 @@ const orderLimiter = rateLimit({
   message: { error: 'Terlalu banyak pesanan. Coba lagi dalam 1 jam.' },
 });
 
-// Testimonial limiter (prevent spam testimonials)
-const testimonialLimiter = rateLimit({
-  windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: 3, // Max 3 testimonials per day per IP
-  message: { error: 'Batas pengiriman testimoni tercapai. Coba lagi besok.' },
-});
-
 // Apply global rate limiter to all API routes
 app.use('/api/', globalLimiter);
 
@@ -134,7 +127,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/payment-methods', paymentRoutes);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/flash-sales', flashSaleRoutes);
-app.use('/api/testimonials', testimonialLimiter, testimonialRoutes); // ✅ Rate limited
+app.use('/api/testimonials', testimonialRoutes); // Rate limit applied only to POST in route file
 app.use('/api/articles', articleRoutes);
 app.use('/api/orders', orderLimiter, orderRoutes); // ✅ Rate limited
 app.use('/api/settings', settingsRoutes);
