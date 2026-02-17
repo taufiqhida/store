@@ -211,9 +211,55 @@ app.get('/api/admin/payment-methods', authMiddleware, async (req, res) => {
     if (conn) conn.release();
   }
 });
-app.post('/api/admin/payment-methods', authMiddleware, require('./routes/payments'));
-app.put('/api/admin/payment-methods/:id', authMiddleware, require('./routes/payments'));
-app.delete('/api/admin/payment-methods/:id', authMiddleware, require('./routes/payments'));
+app.post('/api/admin/payment-methods', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { name, icon, iconType, accountInfo, feeType, fees, currency, qrisImage, isActive } = req.body;
+    const result = await conn.query(
+      'INSERT INTO PaymentMethod (name, icon, iconType, accountInfo, feeType, fees, currency, qrisImage, isActive) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, icon || '💳', iconType || 'emoji', accountInfo || null, feeType || 'fixed', fees || 0, currency || 'IDR', qrisImage || null, isActive !== false ? 1 : 0]
+    );
+    res.json({ success: true, id: Number(result.insertId) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+app.put('/api/admin/payment-methods/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    const { name, icon, iconType, accountInfo, feeType, fees, currency, qrisImage, isActive } = req.body;
+    await conn.query(
+      'UPDATE PaymentMethod SET name = ?, icon = ?, iconType = ?, accountInfo = ?, feeType = ?, fees = ?, currency = ?, qrisImage = ?, isActive = ? WHERE id = ?',
+      [name, icon, iconType || 'emoji', accountInfo, feeType, fees || 0, currency, qrisImage || null, isActive ? 1 : 0, id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+app.delete('/api/admin/payment-methods/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    await conn.query('DELETE FROM PaymentMethod WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 // Admin discounts
 app.get('/api/admin/discounts', authMiddleware, async (req, res) => {
