@@ -409,9 +409,57 @@ app.get('/api/admin/flash-sales', authMiddleware, async (req, res) => {
     if (conn) conn.release();
   }
 });
-app.post('/api/admin/flash-sales', authMiddleware, require('./routes/flashsales'));
-app.put('/api/admin/flash-sales/:id', authMiddleware, require('./routes/flashsales'));
-app.delete('/api/admin/flash-sales/:id', authMiddleware, require('./routes/flashsales'));
+app.post('/api/admin/flash-sales', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { title, description, productId, variantId, discountPercent, startDate, endDate, isActive } = req.body;
+    const result = await conn.query(
+      `INSERT INTO FlashSale (title, description, productId, variantId, discountPercent, startDate, endDate, isActive, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [title, description || null, productId, variantId || null, discountPercent, startDate, endDate, isActive !== false ? 1 : 0]
+    );
+    res.json({ success: true, id: Number(result.insertId) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+app.put('/api/admin/flash-sales/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    const { title, description, productId, variantId, discountPercent, startDate, endDate, isActive } = req.body;
+    await conn.query(
+      `UPDATE FlashSale SET title = ?, description = ?, productId = ?, variantId = ?, discountPercent = ?, 
+       startDate = ?, endDate = ?, isActive = ? WHERE id = ?`,
+      [title, description || null, productId, variantId || null, discountPercent, startDate, endDate, isActive ? 1 : 0, id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+app.delete('/api/admin/flash-sales/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    await conn.query('DELETE FROM FlashSale WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 // Admin testimonials
 app.get('/api/admin/testimonials', authMiddleware, async (req, res) => {
@@ -473,9 +521,62 @@ app.get('/api/admin/articles', authMiddleware, async (req, res) => {
     if (conn) conn.release();
   }
 });
-app.post('/api/admin/articles', authMiddleware, require('./routes/articles'));
-app.put('/api/admin/articles/:id', authMiddleware, require('./routes/articles'));
-app.delete('/api/admin/articles/:id', authMiddleware, require('./routes/articles'));
+app.post('/api/admin/articles', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { title, slug, content, image, isPublished } = req.body;
+    const result = await conn.query(
+      `INSERT INTO Article (title, slug, content, image, isPublished, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+      [title, slug, content, image || null, isPublished ? 1 : 0]
+    );
+    res.json({ success: true, id: Number(result.insertId) });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Slug artikel sudah digunakan' });
+    }
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+app.put('/api/admin/articles/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    const { title, slug, content, image, isPublished } = req.body;
+    await conn.query(
+      `UPDATE Article SET title = ?, slug = ?, content = ?, image = ?, isPublished = ?, updatedAt = NOW() WHERE id = ?`,
+      [title, slug, content, image || null, isPublished ? 1 : 0, id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Slug artikel sudah digunakan' });
+    }
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
+app.delete('/api/admin/articles/:id', authMiddleware, async (req, res) => {
+  const pool = require('./config/database');
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const { id } = req.params;
+    await conn.query('DELETE FROM Article WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  } finally {
+    if (conn) conn.release();
+  }
+});
 
 // Admin settings
 app.put('/api/admin/settings', authMiddleware, async (req, res) => {
