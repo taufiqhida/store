@@ -112,7 +112,7 @@ router.put('/credentials', authMiddleware, async (req, res) => {
         }
 
         if (newPassword) {
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            const hashedPassword = await bcrypt.hash(newPassword, 8);
             updateFields.push('password = ?');
             updateValues.push(hashedPassword);
         }
@@ -180,8 +180,8 @@ router.post('/users', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Username sudah digunakan' });
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Hash password (8 rounds for faster admin creation)
+        const hashedPassword = await bcrypt.hash(password, 8);
 
         // Prepare permissions
         const permissionsJson = role === 'SUPER_ADMIN' ? '["*"]' : JSON.stringify(permissions || []);
@@ -229,7 +229,7 @@ router.put('/users/:id', authMiddleware, async (req, res) => {
         }
 
         if (password) {
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const hashedPassword = await bcrypt.hash(password, 8);
             updateFields.push('password = ?');
             updateValues.push(hashedPassword);
         }
