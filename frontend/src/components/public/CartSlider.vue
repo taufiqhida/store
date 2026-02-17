@@ -151,6 +151,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useCart } from '../../composables/useCart'
+import { validateDiscount } from '../../services/api'
 
 const props = defineProps({
   paymentMethods: {
@@ -239,29 +240,24 @@ const handleClearCart = () => {
   }
 }
 
-// Apply promo code
+  // Apply promo code
 const applyPromoCode = async () => {
   if (!promoCode.value) return
   promoLoading.value = true
   promoError.value = ''
   try {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-    const response = await fetch(`${baseUrl}/discounts/validate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        code: promoCode.value, 
-        subtotal: cartSubtotal.value 
-      })
+    const response = await validateDiscount({ 
+      code: promoCode.value, 
+      subtotal: cartSubtotal.value 
     })
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error || 'Kode tidak valid')
-    }
+    
+    // axios returns data in response.data
+    const data = response.data
     appliedDiscount.value = data.discount
     promoCode.value = ''
   } catch (error) {
-    promoError.value = error.message || 'Kode tidak valid'
+    // Axios error handling
+    promoError.value = error.response?.data?.error || error.message || 'Kode tidak valid'
   } finally {
     promoLoading.value = false
   }

@@ -99,7 +99,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import axios from 'axios'
+import { updateAdminCredentials } from '../../../services/api'
 
 const props = defineProps({
   show: Boolean
@@ -152,21 +152,10 @@ const handleSubmit = async () => {
   success.value = ''
   
   try {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-    const token = localStorage.getItem('adminToken')
-    
-    await axios.put(
-      `${baseUrl}/admin/credentials`,
-      {
+    await updateAdminCredentials({
         currentPassword: form.value.currentPassword,
         newPassword: form.value.newPassword
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    )
+    })
     
     success.value = 'Password berhasil diubah!'
     

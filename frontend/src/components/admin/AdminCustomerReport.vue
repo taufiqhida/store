@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { getAdminCustomerReport } from '../../services/api'
 import html2canvas from 'html2canvas'
 
 const props = defineProps({
@@ -48,10 +48,7 @@ const searchOrders = async () => {
     if (startDate.value) params.startDate = startDate.value
     if (endDate.value) params.endDate = endDate.value
 
-    const response = await axios.get('http://localhost:3000/api/admin/orders/customer-report', {
-      headers: { Authorization: `Bearer ${token}` },
-      params
-    })
+    const response = await getAdminCustomerReport(params)
     orders.value = response.data
     if (orders.value.length === 0) {
       error.value = 'Tidak ada pesanan ditemukan'
