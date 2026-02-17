@@ -184,8 +184,47 @@ const fetchData = async () => {
     }
   } catch (error) {
     console.error('Error fetching admin users:', error)
-    // Don't fail the whole dashboard if admin users fetch fails
   }
+}
+
+// === TARGETED FETCH FUNCTIONS (ringan, hanya refetch 1 section) ===
+const refreshProducts = async () => {
+  try { products.value = (await getAdminProducts()).data } catch (e) { console.error(e) }
+}
+const refreshCategories = async () => {
+  try { categories.value = (await getAdminCategories()).data } catch (e) { console.error(e) }
+}
+const refreshPayments = async () => {
+  try { paymentMethods.value = (await getAdminPaymentMethods()).data } catch (e) { console.error(e) }
+}
+const refreshDiscounts = async () => {
+  try { discounts.value = (await getAdminDiscounts()).data } catch (e) { console.error(e) }
+}
+const refreshFlashSales = async () => {
+  try { flashSales.value = (await getAdminFlashSales()).data } catch (e) { console.error(e) }
+}
+const refreshTestimonials = async () => {
+  try { testimonials.value = (await getAdminTestimonials()).data } catch (e) { console.error(e) }
+}
+const refreshArticles = async () => {
+  try { articles.value = (await getAdminArticles()).data } catch (e) { console.error(e) }
+}
+const refreshOrders = async () => {
+  try {
+    const [ordRes, analyticsRes] = await Promise.all([getAdminOrders(), getOrderAnalytics()])
+    orders.value = ordRes.data
+    orderAnalytics.value = analyticsRes.data
+  } catch (e) { console.error(e) }
+}
+const refreshSettings = async () => {
+  try {
+    const res = await getSettings()
+    settings.value = res.data
+    settingsForm.value = { ...res.data }
+  } catch (e) { console.error(e) }
+}
+const refreshAdminUsers = async () => {
+  try { adminUsers.value = (await getAdminUsers()).data } catch (e) { console.error(e) }
 }
 
 const logout = () => {
@@ -217,7 +256,7 @@ const saveProduct = async (formData) => {
       await createProduct(data)
     }
     showProductModal.value = false
-    fetchData()
+    refreshProducts()
   } catch (error) {
     console.error('Error saving product:', error)
     alert('Gagal menyimpan produk')
@@ -228,7 +267,7 @@ const confirmDeleteProduct = async (product) => {
   if (confirm(`Hapus produk "${product.name}"?`)) {
     try {
       await deleteProduct(product.id)
-      fetchData()
+      refreshProducts()
     } catch (error) {
       alert('Gagal menghapus produk')
     }
@@ -256,7 +295,7 @@ const saveCategory = async (formData) => {
       await createCategory(formData)
     }
     showCategoryModal.value = false
-    fetchData()
+    refreshCategories()
   } catch (error) {
     console.error('Error saving category:', error)
     alert('Gagal menyimpan kategori')
@@ -267,7 +306,7 @@ const confirmDeleteCategory = async (cat) => {
   if (confirm(`Hapus kategori "${cat.name}"?`)) {
     try {
       await deleteCategory(cat.id)
-      fetchData()
+      refreshCategories()
     } catch (error) {
       alert('Gagal menghapus kategori. Pastikan tidak ada produk yang menggunakan kategori ini.')
     }
@@ -295,7 +334,7 @@ const savePayment = async (formData) => {
       await createPaymentMethod(formData)
     }
     showPaymentModal.value = false
-    fetchData()
+    refreshPayments()
   } catch (error) {
     console.error('Error saving payment:', error)
     alert('Gagal menyimpan metode pembayaran')
@@ -306,7 +345,7 @@ const confirmDeletePayment = async (pm) => {
   if (confirm(`Hapus metode pembayaran "${pm.name}"?`)) {
     try {
       await deletePaymentMethod(pm.id)
-      fetchData()
+      refreshPayments()
     } catch (error) {
       alert('Gagal menghapus metode pembayaran')
     }
@@ -334,7 +373,7 @@ const saveDiscount = async (formData) => {
       await createDiscount(formData)
     }
     showDiscountModal.value = false
-    fetchData()
+    refreshDiscounts()
   } catch (error) {
     console.error('Error saving discount:', error)
     alert('Gagal menyimpan diskon')
@@ -345,7 +384,7 @@ const confirmDeleteDiscount = async (disc) => {
   if (confirm(`Hapus diskon "${disc.code}"?`)) {
     try {
       await deleteDiscount(disc.id)
-      fetchData()
+      refreshDiscounts()
     } catch (error) {
       alert('Gagal menghapus diskon')
     }
@@ -383,7 +422,7 @@ const saveFlashSale = async (formData) => {
       await createFlashSale(data)
     }
     showFlashSaleModal.value = false
-    fetchData()
+    refreshFlashSales()
   } catch (error) {
     console.error('Error saving flash sale:', error)
     alert('Gagal menyimpan flash sale')
@@ -394,7 +433,7 @@ const confirmDeleteFlashSale = async (fs) => {
   if (confirm(`Hapus flash sale "${fs.title}"?`)) {
     try {
       await deleteFlashSale(fs.id)
-      fetchData()
+      refreshFlashSales()
     } catch (error) {
       alert('Gagal menghapus flash sale')
     }
@@ -405,7 +444,7 @@ const confirmDeleteFlashSale = async (fs) => {
 const approveTestimonial = async (testi) => {
   try {
     await updateTestimonial(testi.id, { isApproved: true })
-    fetchData()
+    refreshTestimonials()
   } catch (error) {
     alert('Gagal menyetujui testimoni')
   }
@@ -414,7 +453,7 @@ const approveTestimonial = async (testi) => {
 const rejectTestimonial = async (testi) => {
   try {
     await updateTestimonial(testi.id, { isApproved: false })
-    fetchData()
+    refreshTestimonials()
   } catch (error) {
     alert('Gagal menolak testimoni')
   }
@@ -424,7 +463,7 @@ const confirmDeleteTestimonial = async (testi) => {
   if (confirm('Hapus testimoni ini?')) {
     try {
       await deleteTestimonial(testi.id)
-      fetchData()
+      refreshTestimonials()
     } catch (error) {
       alert('Gagal menghapus testimoni')
     }
@@ -452,7 +491,7 @@ const saveArticle = async (formData) => {
       await createArticle(formData)
     }
     showArticleModal.value = false
-    fetchData()
+    refreshArticles()
   } catch (error) {
     console.error('Error saving article:', error)
     alert('Gagal menyimpan artikel')
@@ -463,7 +502,7 @@ const confirmDeleteArticle = async (art) => {
   if (confirm(`Hapus artikel "${art.title}"?`)) {
     try {
       await deleteArticle(art.id)
-      fetchData()
+      refreshArticles()
     } catch (error) {
       alert('Gagal menghapus artikel')
     }
@@ -480,7 +519,7 @@ const saveSettings = async (formData) => {
   try {
     await updateSettings(formData)
     showSettingsModal.value = false
-    fetchData()
+    refreshSettings()
   } catch (error) {
     alert('Gagal menyimpan pengaturan')
   }
@@ -524,7 +563,7 @@ const viewOrderDetail = (order) => {
 const handleUpdateOrderStatus = async (order, newStatus) => {
   try {
     await updateOrderStatus(order.id, newStatus)
-    fetchData()
+    refreshOrders()
   } catch (error) {
     alert('Gagal mengupdate status pesanan')
   }
@@ -534,7 +573,7 @@ const confirmDeleteOrder = async (order) => {
   if (confirm(`Hapus pesanan "${order.orderCode}"?`)) {
     try {
       await deleteOrder(order.id)
-      fetchData()
+      refreshOrders()
     } catch (error) {
       alert('Gagal menghapus pesanan')
     }
@@ -577,7 +616,7 @@ const saveAdminUser = async (formData) => {
       await createAdminUser(formData)
     }
     showAdminUserModal.value = false
-    fetchData()
+    refreshAdminUsers()
   } catch (error) {
     adminUserError.value = error.response?.data?.error || 'Gagal menyimpan admin user'
   }
@@ -587,7 +626,7 @@ const confirmDeleteAdminUser = async (user) => {
   if (confirm(`Nonaktifkan admin "${user.username}"?`)) {
     try {
       await deleteAdminUser(user.id)
-      fetchData()
+      refreshAdminUsers()
     } catch (error) {
       alert('Gagal menonaktifkan admin user')
     }
@@ -598,7 +637,7 @@ const confirmRestoreAdminUser = async (user) => {
   if (confirm(`Aktivkan kembali admin "${user.username}"?`)) {
     try {
       await restoreAdminUser(user.id)
-      fetchData()
+      refreshAdminUsers()
     } catch (error) {
       alert('Gagal mengaktifkan admin user')
     }
