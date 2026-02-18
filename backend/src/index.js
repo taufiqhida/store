@@ -617,8 +617,7 @@ app.put('/api/admin/settings', authMiddleware, async (req, res) => {
   }
 });
 
-// Admin credentials
-app.put('/api/admin/credentials', authMiddleware, require('./routes/auth'));
+// Admin credentials - handled by authRoutes (/api/admin/credentials) mounted above
 
 // Image upload
 app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res) => {
