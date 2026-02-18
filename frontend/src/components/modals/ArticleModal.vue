@@ -52,7 +52,7 @@ const form = ref({ ...props.modelValue })
 
 watch(() => props.modelValue, (newVal) => {
   form.value = { ...newVal }
-}, { deep: true })
+}, { immediate: true })
 
 const generateSlug = () => {
   form.value.slug = form.value.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')

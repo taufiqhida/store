@@ -53,7 +53,7 @@ const form = ref({ ...props.modelValue })
 
 watch(() => props.modelValue, (newVal) => {
   form.value = { ...newVal }
-}, { deep: true })
+}, { immediate: true })
 </script>
 
 <style scoped>

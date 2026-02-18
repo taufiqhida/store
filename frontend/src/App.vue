@@ -491,7 +491,6 @@ const handleCartCheckout = async (checkoutData) => {
     <!-- Testimonial Modal -->
     <TestimonialModal 
       :show="showTestimonialModal"
-      v-model="testimonialForm"
       :loading="testimonialLoading"
       :error="testimonialError"
       :success="testimonialSuccess"

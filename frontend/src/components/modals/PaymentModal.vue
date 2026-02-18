@@ -88,7 +88,7 @@ const uploading = ref(false)
 
 watch(() => props.modelValue, (newVal) => {
   form.value = { ...newVal }
-}, { deep: true })
+}, { immediate: true })
 
 const handleUpload = async (e) => {
   if (!props.uploadHandler) return

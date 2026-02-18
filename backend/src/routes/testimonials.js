@@ -73,49 +73,4 @@ router.post('/', testimonialSubmitLimiter, async (req, res) => {
     }
 });
 
-// Admin: Get all testimonials
-router.get('/admin', authMiddleware, async (req, res) => {
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        const testimonials = await conn.query('SELECT * FROM Testimonial ORDER BY createdAt DESC');
-        res.json(testimonials);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    } finally {
-        if (conn) conn.release();
-    }
-});
-
-// Admin: Update testimonial
-router.put('/:id', authMiddleware, async (req, res) => {
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        const { id } = req.params;
-        const { isApproved } = req.body;
-        await conn.query('UPDATE Testimonial SET isApproved = ? WHERE id = ?', [isApproved ? 1 : 0, id]);
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    } finally {
-        if (conn) conn.release();
-    }
-});
-
-// Admin: Delete testimonial
-router.delete('/:id', authMiddleware, async (req, res) => {
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        const { id } = req.params;
-        await conn.query('DELETE FROM Testimonial WHERE id = ?', [id]);
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    } finally {
-        if (conn) conn.release();
-    }
-});
-
 module.exports = router;

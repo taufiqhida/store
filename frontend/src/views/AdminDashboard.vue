@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   getAdminProducts, getSettings, createProduct, updateProduct, deleteProduct, updateSettings,
@@ -27,7 +27,9 @@ import TestimonialsTab from '../components/admin/TestimonialsTab.vue'
 import ArticlesTab from '../components/admin/ArticlesTab.vue'
 import OrdersTab from '../components/admin/OrdersTab.vue'
 import AdminUsersTab from '../components/admin/AdminUsersTab.vue'
-import AdminCustomerReport from '../components/admin/AdminCustomerReport.vue'
+const AdminCustomerReport = defineAsyncComponent(() =>
+  import('../components/admin/AdminCustomerReport.vue')
+)
 
 // Import Modals
 import ProductModal from '../components/modals/ProductModal.vue'
@@ -62,6 +64,7 @@ const adminUsers = ref([])
 // UI state
 const activeTab = ref('orders')
 const loading = ref(true)
+const loadedTabs = ref(new Set())
 
 // Modal visibility
 const showProductModal = ref(false)
@@ -155,38 +158,66 @@ onMounted(async () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const [prodRes, catRes, pmRes, discRes, fsRes, testiRes, artRes, ordRes, analyticsRes, settRes] = await Promise.all([
-      getAdminProducts(), getAdminCategories(), getAdminPaymentMethods(), getAdminDiscounts(),
-      getAdminFlashSales(), getAdminTestimonials(), getAdminArticles(), getAdminOrders(), getOrderAnalytics(), getSettings()
+    // Only load essentials on mount (default tab = orders)
+    const [ordRes, analyticsRes, settRes] = await Promise.all([
+      getAdminOrders(), getOrderAnalytics(), getSettings()
     ])
-    products.value = prodRes.data
-    categories.value = catRes.data
-    paymentMethods.value = pmRes.data
-    discounts.value = discRes.data
-    flashSales.value = fsRes.data
-    testimonials.value = testiRes.data
-    articles.value = artRes.data
     orders.value = ordRes.data
     orderAnalytics.value = analyticsRes.data
     settings.value = settRes.data
     settingsForm.value = { ...settRes.data }
-    
+    loadedTabs.value.add('orders')
   } catch (error) {
     console.error('Error fetching data:', error)
   } finally {
     loading.value = false
   }
-  
-  // Fetch admin users AFTER main data to avoid blocking on error
+}
+
+// Lazy-load data when tab is activated
+const loadTabData = async (tab) => {
+  if (loadedTabs.value.has(tab)) return
+  loadedTabs.value.add(tab)
   try {
-    if (hasPermission('admin_users')) {
-      const usersRes = await getAdminUsers()
-      adminUsers.value = usersRes.data
+    switch (tab) {
+      case 'products':
+        // Products tab needs categories for the modal dropdown
+        await Promise.all([
+          refreshProducts(),
+          !loadedTabs.value.has('categories') ? (loadedTabs.value.add('categories'), refreshCategories()) : Promise.resolve()
+        ])
+        break
+      case 'categories': await refreshCategories(); break
+      case 'payments': await refreshPayments(); break
+      case 'discounts':
+        // Discounts tab needs products for product selection
+        await Promise.all([
+          refreshDiscounts(),
+          !loadedTabs.value.has('products') ? (loadedTabs.value.add('products'), refreshProducts()) : Promise.resolve()
+        ])
+        break
+      case 'flashsales':
+        // Flash sales tab needs products for product selection
+        await Promise.all([
+          refreshFlashSales(),
+          !loadedTabs.value.has('products') ? (loadedTabs.value.add('products'), refreshProducts()) : Promise.resolve()
+        ])
+        break
+      case 'testimonials': await refreshTestimonials(); break
+      case 'articles': await refreshArticles(); break
+      case 'orders': await refreshOrders(); break
+      case 'adminusers': await refreshAdminUsers(); break
+      // customer_report loads its own data internally
     }
   } catch (error) {
-    console.error('Error fetching admin users:', error)
+    loadedTabs.value.delete(tab) // allow retry on error
+    console.error(`Error loading ${tab}:`, error)
   }
 }
+
+watch(activeTab, (tab) => {
+  loadTabData(tab)
+})
 
 // === TARGETED FETCH FUNCTIONS (ringan, hanya refetch 1 section) ===
 const refreshProducts = async () => {

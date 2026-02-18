@@ -118,7 +118,7 @@ const maintenanceEndDateLocal = computed({
 
 watch(() => props.modelValue, (newVal) => {
   form.value = { ...newVal }
-}, { deep: true })
+}, { immediate: true })
 
 function handleSave() {
   emit('save', form.value)

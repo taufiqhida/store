@@ -121,7 +121,7 @@ const uploading = ref(false)
 
 watch(() => props.modelValue, (newVal) => {
   form.value = { ...newVal }
-}, { deep: true })
+}, { immediate: true })
 
 const generateSlug = () => {
   form.value.slug = form.value.name

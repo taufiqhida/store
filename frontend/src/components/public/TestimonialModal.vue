@@ -65,19 +65,20 @@ import { ref, watch } from 'vue'
 
 const props = defineProps({
   show: Boolean,
-  modelValue: Object,
   loading: Boolean,
   error: String,
   success: String
 })
 
-const emit = defineEmits(['close', 'submit', 'update:modelValue'])
+defineEmits(['close', 'submit'])
 
-const form = ref({ ...props.modelValue })
+const form = ref({ orderCode: '', name: '', content: '', rating: 5 })
 
-// One-way: init form from prop (no deep watcher back to parent)
-watch(() => props.modelValue, (v) => {
-  form.value = { ...v }
+// Reset form when modal opens
+watch(() => props.show, (isVisible) => {
+  if (isVisible) {
+    form.value = { orderCode: '', name: '', content: '', rating: 5 }
+  }
 })
 </script>
 
