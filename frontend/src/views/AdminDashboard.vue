@@ -237,7 +237,7 @@ const logout = () => {
 // ========== PRODUCT FUNCTIONS ==========
 const openAddProduct = () => {
   editingProduct.value = null
-  productForm.value = { name: '', slug: '', description: '', image: '', badge: '', categoryId: categories.value[0]?.id || '', variants: [{ name: '', price: 0, originalPrice: 0, isWarranty: false, isActive: true }], isActive: true }
+  productForm.value = { name: '', slug: '', description: '', image: '', badge: '', categoryId: categories.value[0]?.id || '', variants: [{ name: '', price: 0, capitalPrice: 0, originalPrice: 0, isWarranty: false, isActive: true }], isActive: true }
   showProductModal.value = true
 }
 
@@ -259,7 +259,8 @@ const saveProduct = async (formData) => {
     refreshProducts()
   } catch (error) {
     console.error('Error saving product:', error)
-    alert('Gagal menyimpan produk')
+    const msg = error.response?.data?.error || 'Gagal menyimpan produk'
+    alert(msg)
   }
 }
 
@@ -546,11 +547,9 @@ const saveCredentials = async (formData) => {
   }
 }
 
-// Image upload handler
+// Image upload handler - pass raw file, uploadImage() handles FormData
 const handleImageUpload = async (file) => {
-  const formData = new FormData()
-  formData.append('image', file)
-  const res = await uploadImage(formData)
+  const res = await uploadImage(file)
   return res.data.url
 }
 

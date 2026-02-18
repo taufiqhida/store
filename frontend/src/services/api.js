@@ -61,7 +61,7 @@ export const validateDiscount = (data) => api.post('/discounts/validate', data);
 // Admin Credentials
 export const updateAdminCredentials = (data) => api.put('/admin/credentials', data);
 
-// Image Upload
+// Image Upload - accepts raw File object
 export const uploadImage = async (file) => {
     const formData = new FormData();
     formData.append('image', file);
