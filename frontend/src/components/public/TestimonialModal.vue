@@ -75,13 +75,10 @@ const emit = defineEmits(['close', 'submit', 'update:modelValue'])
 
 const form = ref({ ...props.modelValue })
 
+// One-way: init form from prop (no deep watcher back to parent)
 watch(() => props.modelValue, (v) => {
   form.value = { ...v }
-}, { deep: true })
-
-watch(form, (v) => {
-  emit('update:modelValue', v)
-}, { deep: true })
+})
 </script>
 
 <style scoped>

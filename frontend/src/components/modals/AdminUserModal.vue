@@ -134,17 +134,12 @@ const form = ref({
   permissions: []
 })
 
-// Watch for prop changes
+// One-way: init form from prop (no deep watcher back to parent)
 watch(() => props.modelValue, (newVal) => {
   if (newVal) {
-    form.value = { ...newVal }
+    form.value = { ...newVal, permissions: [...(newVal.permissions || [])] }
   }
 }, { immediate: true })
-
-// Update parent model
-watch(form, (newVal) => {
-  emit('update:modelValue', newVal)
-}, { deep: true })
 
 const allSelected = computed(() => {
   return form.value.permissions.length === availablePermissions.length
