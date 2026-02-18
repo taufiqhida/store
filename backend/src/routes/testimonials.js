@@ -45,14 +45,14 @@ router.post('/', testimonialSubmitLimiter, async (req, res) => {
             return res.status(400).json({ error: 'Kode pemesanan harus diisi' });
         }
 
-        const orders = await conn.query('SELECT productName FROM `Order` WHERE UPPER(orderCode) = ?', [cleanOrderCode]);
+        const orders = await conn.query('SELECT productName FROM `Order` WHERE orderCode = ?', [cleanOrderCode]);
         console.log('Found orders:', orders);
 
         if (orders.length === 0) {
             return res.status(400).json({ error: 'Kode pemesanan tidak ditemukan. Pastikan kode sesuai dengan yang ada di pesan WhatsApp.' });
         }
 
-        const existing = await conn.query('SELECT id FROM Testimonial WHERE UPPER(orderCode) = ?', [cleanOrderCode]);
+        const existing = await conn.query('SELECT id FROM Testimonial WHERE orderCode = ?', [cleanOrderCode]);
         if (existing.length > 0) {
             return res.status(400).json({ error: 'Testimoni untuk pesanan ini sudah ada' });
         }

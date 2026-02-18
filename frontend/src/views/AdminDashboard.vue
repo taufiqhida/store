@@ -111,6 +111,7 @@ const credentialsForm = ref({ currentPassword: '', newUsername: '', newPassword:
 const credentialsError = ref('')
 const adminUserForm = ref({ username: '', password: '', name: '', email: '', role: 'ADMIN', permissions: [] })
 const adminUserError = ref('')
+const savingAdminUser = ref(false)
 
 // Tabs config
 const tabs = computed(() => [
@@ -603,6 +604,7 @@ const openEditAdminUser = (user) => {
 
 const saveAdminUser = async (formData) => {
   adminUserError.value = ''
+  savingAdminUser.value = true
   try {
     if (editingAdminUser.value) {
       // Don't send password if empty
@@ -618,6 +620,8 @@ const saveAdminUser = async (formData) => {
     refreshAdminUsers()
   } catch (error) {
     adminUserError.value = error.response?.data?.error || 'Gagal menyimpan admin user'
+  } finally {
+    savingAdminUser.value = false
   }
 }
 
@@ -856,7 +860,7 @@ const confirmRestoreAdminUser = async (user) => {
       :show="showAdminUserModal"
       v-model="adminUserForm"
       :editing="!!editingAdminUser"
-      :loading="false"
+      :loading="savingAdminUser"
       :error="adminUserError"
       @close="showAdminUserModal = false"
       @submit="saveAdminUser"
