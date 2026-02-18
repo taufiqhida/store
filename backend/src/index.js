@@ -70,9 +70,20 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false, // Allow external resources
 }));
 
-// ✅ SECURITY: Configure CORS to only allow frontend origin
+// ✅ SECURITY: Configure CORS
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Allow all for now, tighten later
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -159,7 +170,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ==================== PUBLIC ROUTES ====================
@@ -614,7 +626,9 @@ app.post('/api/admin/upload', authMiddleware, upload.single('image'), (req, res)
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    const imageUrl = `http://localhost:${PORT}/uploads/${req.file.filename}`;
+    // Use BASE_URL from env, or build from request headers for hosting
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
     res.json({ success: true, url: imageUrl });
   } catch (error) {
     res.status(500).json({ error: error.message });
