@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-// API URL dari environment variable - ubah di file .env
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// API URL: prioritas env variable, lalu auto-detect dari domain saat ini
+const API_URL = import.meta.env.VITE_API_URL ||
+    (window.location.hostname === 'localhost'
+        ? 'http://localhost:3000/api'
+        : `${window.location.protocol}//${window.location.host}/api`);
 
 const api = axios.create({
     baseURL: API_URL,
