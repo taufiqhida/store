@@ -90,21 +90,31 @@ app.use(cors({
 }));
 
 // ✅ SECURITY: Rate Limiting Configuration
-// Global rate limiter for all API requests
+// Global rate limiter - hanya untuk route PUBLIK
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Max 100 requests per windowMs per IP
+  max: 200,
   message: { error: 'Terlalu banyak request. Coba lagi dalam 15 menit.' },
-  standardHeaders: true, // Return rate limit info in headers
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/admin'), // Skip admin routes (path relatif dari /api/)
+});
+
+// Admin rate limiter - sangat longgar untuk operasi dashboard
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000, // 1000 request per 15 menit untuk admin
+  message: { error: 'Terlalu banyak request admin. Coba lagi dalam 15 menit.' },
+  standardHeaders: true,
   legacyHeaders: false,
 });
 
 // Strict limiter for login attempts (prevent brute force)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Max 5 login attempts per 15 minutes
+  max: 10, // Max 10 login attempts per 15 minutes
   message: { error: 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.' },
-  skipSuccessfulRequests: true, // Don't count successful logins
+  skipSuccessfulRequests: true,
 });
 
 // Order creation limiter (prevent spam orders)
@@ -184,6 +194,9 @@ app.use('/api/testimonials', testimonialRoutes); // Rate limit applied only to P
 app.use('/api/articles', articleRoutes);
 app.use('/api/orders', orderLimiter, orderRoutes); // ✅ Rate limited
 app.use('/api/settings', settingsRoutes);
+
+// ==================== ADMIN RATE LIMIT (applies to ALL /api/admin/* routes) ====================
+app.use('/api/admin', adminLimiter);
 
 // ==================== AUTH ROUTES ====================
 // Apply stricter rate limit to login endpoint

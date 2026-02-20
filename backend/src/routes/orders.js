@@ -77,6 +77,11 @@ router.post('/', async (req, res) => {
             .replace('{payment}', paymentMethod)
             .replace('{order_code}', orderCode);
 
+        // Tambahkan info rekening pembayaran jika ada
+        if (paymentAccountInfo) {
+            message += `\n🏦 No. Rekening: ${paymentAccountInfo}`;
+        }
+
         if (buyerMessage) {
             message += `\n\n💬 Catatan: ${buyerMessage}`;
         }
@@ -155,6 +160,13 @@ router.post('/cart', async (req, res) => {
         // Build WhatsApp message
         const waNumber = settings.whatsapp_number || '6281234567890';
 
+        // Ambil info rekening dari payment method yang dipilih
+        const paymentRows = await conn.query(
+            'SELECT accountInfo FROM PaymentMethod WHERE name = ? AND isActive = 1 LIMIT 1',
+            [paymentMethod]
+        );
+        const paymentAccountInfo = paymentRows.length > 0 ? paymentRows[0].accountInfo : null;
+
         let message = `Halo Taufiq Store! 👋\n\n`;
         message += `📋 *KODE BOOKING: ${bookingCode}*\n\n`;
         message += `Saya mau pesan:\n`;
@@ -171,6 +183,9 @@ router.post('/cart', async (req, res) => {
         message += `💵 Subtotal: Rp ${formatPrice(subtotal)}\n`;
         message += `🔑 Kode Unik: +Rp ${orderUniqueCode}\n`;
         message += `💳 Pembayaran: ${paymentMethod}\n`;
+        if (paymentAccountInfo) {
+            message += `🏦 No. Rekening: ${paymentAccountInfo}\n`;
+        }
         message += `━━━━━━━━━━━━━━━\n`;
         message += `💰 *TOTAL BAYAR: Rp ${formatPrice(grandTotal)}*\n\n`;
         message += `Mohon diproses ya, terima kasih! 🙏`;

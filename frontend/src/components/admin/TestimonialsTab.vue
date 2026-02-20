@@ -11,16 +11,16 @@
             <td><code>{{ testi.orderCode }}</code></td>
             <td><strong>{{ testi.name }}</strong></td>
             <td>{{ testi.productName }}</td>
-            <td>{{ '⭐'.repeat(testi.rating) }}</td>
+            <td>{{ '⭐'.repeat(Math.min(parseInt(testi.rating) || 0, 5)) }}</td>
             <td class="content-cell">{{ testi.content }}</td>
             <td>
-              <span :class="['status', testi.isApproved ? 'active' : 'pending']">
-                {{ testi.isApproved ? '✅ Approved' : '⏳ Pending' }}
+              <span :class="['status', testi.isApproved == 1 ? 'active' : 'pending']">
+                {{ testi.isApproved == 1 ? '✅ Approved' : '⏳ Pending' }}
               </span>
             </td>
             <td>
-              <button v-if="!testi.isApproved" class="btn btn-sm btn-edit" @click="$emit('approve', testi)">✓</button>
-              <button v-if="testi.isApproved" class="btn btn-sm btn-secondary" @click="$emit('reject', testi)">✕</button>
+              <button v-if="testi.isApproved != 1" class="btn btn-sm btn-edit" @click="$emit('approve', testi)">✓</button>
+              <button v-if="testi.isApproved == 1" class="btn btn-sm btn-secondary" @click="$emit('reject', testi)">✕</button>
               <button class="btn btn-sm btn-delete" @click="$emit('delete', testi)">🗑️</button>
             </td>
           </tr>

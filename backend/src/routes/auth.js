@@ -1,9 +1,39 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs'); // Hanya untuk backward compatibility verifikasi password lama
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const { authMiddleware, JWT_SECRET } = require('../middleware/auth');
+
+// ==================== PASSWORD HELPERS ====================
+// Hash password menggunakan crypto.scrypt (Node built-in, lebih cepat dari bcrypt)
+const hashPassword = (password) => {
+    return new Promise((resolve, reject) => {
+        const salt = crypto.randomBytes(16).toString('hex');
+        crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+            if (err) reject(err);
+            resolve(`scrypt:${salt}:${derivedKey.toString('hex')}`);
+        });
+    });
+};
+
+// Verifikasi password (support scrypt baru dan bcrypt lama)
+const verifyPassword = async (password, hash) => {
+    if (hash.startsWith('scrypt:')) {
+        // Format baru: scrypt:salt:hash
+        const [, salt, storedHash] = hash.split(':');
+        return new Promise((resolve, reject) => {
+            crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+                if (err) reject(err);
+                resolve(derivedKey.toString('hex') === storedHash);
+            });
+        });
+    } else {
+        // Format lama: bcrypt (backward compatible)
+        return bcrypt.compare(password, hash);
+    }
+};
 
 // Login
 router.post('/login', async (req, res) => {
@@ -24,9 +54,19 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Akun tidak aktif. Hubungi administrator.' });
         }
 
-        const validPassword = await bcrypt.compare(password, admin.password);
+        const validPassword = await verifyPassword(password, admin.password);
         if (!validPassword) {
             return res.status(401).json({ error: 'Username atau password salah' });
+        }
+
+        // Jika password masih bcrypt, upgrade ke scrypt saat login berhasil
+        if (!admin.password.startsWith('scrypt:')) {
+            try {
+                const newHash = await hashPassword(password);
+                const conn2 = await pool.getConnection();
+                await conn2.query('UPDATE admin_users SET password = ? WHERE id = ?', [newHash, admin.id]);
+                conn2.release();
+            } catch (e) { /* non-fatal, skip */ }
         }
 
         const token = jwt.sign({ adminId: admin.id }, JWT_SECRET, { expiresIn: '7d' });
@@ -112,7 +152,7 @@ router.put('/credentials', authMiddleware, async (req, res) => {
         }
 
         if (newPassword) {
-            const hashedPassword = await bcrypt.hash(newPassword, 4);
+            const hashedPassword = await hashPassword(newPassword);
             updateFields.push('password = ?');
             updateValues.push(hashedPassword);
         }
@@ -180,8 +220,8 @@ router.post('/users', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Username sudah digunakan' });
         }
 
-        // Hash password (8 rounds for faster admin creation)
-        const hashedPassword = await bcrypt.hash(password, 4);
+        // Hash password menggunakan scrypt (cepat, non-blocking)
+        const hashedPassword = await hashPassword(password);
 
         // Prepare permissions
         const permissionsJson = role === 'SUPER_ADMIN' ? '["*"]' : JSON.stringify(permissions || []);
@@ -229,7 +269,7 @@ router.put('/users/:id', authMiddleware, async (req, res) => {
         }
 
         if (password) {
-            const hashedPassword = await bcrypt.hash(password, 4);
+            const hashedPassword = await hashPassword(password);
             updateFields.push('password = ?');
             updateValues.push(hashedPassword);
         }
